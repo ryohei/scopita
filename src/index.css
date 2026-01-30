@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f2eb;
+}
+
+/* ボタンの押せる感を演出 */
+.btn-pressable {
+  transition: all 0.15s ease;
+  transform: translateY(0);
+}
+
+.btn-pressable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-pressable:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* カードスタイル */
+.card-soft {
+  background: white;
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* 麻雀卓風グラデーション */
+.mahjong-table-gradient {
+  background: linear-gradient(135deg, #1b4d3e 0%, #2a6b54 50%, #1b4d3e 100%);
+  background-size: 200% 200%;
+}
+
+/* カスタムチェックボックス */
+.custom-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: white;
+  border: 2px solid #d1d5db;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.custom-checkbox:checked {
+  background-color: #1b4d3e;
+  border-color: #1b4d3e;
+}
+
+.custom-checkbox:checked::after {
+  content: '\2713';
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.custom-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.3);
+}
+
+/* 入力フィールド */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"] {
+  transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.3);
+}
