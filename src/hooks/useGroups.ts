@@ -112,7 +112,9 @@ export function useGroups() {
       .select()
       .single()
 
-    if (!error) {
+    if (error) {
+      console.error('Create group error:', error)
+    } else {
       await fetchGroups()
     }
 

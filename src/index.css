@@ -1,8 +1,31 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v4: カスタムテーマ定義 */
+@theme {
+  /* カラー */
+  --color-mahjong-green: #2d5016;
+  --color-mahjong-green-light: #3a6b1e;
+  --color-mahjong-green-dark: #1e3a0f;
+  --color-mahjong-red: #d32f2f;
+  --color-mahjong-table: #1b4d3e;
+  --color-mahjong-table-light: #2a6b54;
+  --color-cream: #f5f2eb;
+  --color-cream-dark: #ebe6da;
+
+  /* シャドウ */
+  --shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.1);
+  --shadow-button: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --shadow-card: 0 8px 25px rgba(0, 0, 0, 0.12);
+
+  /* アニメーション */
+  --animate-float: float 3s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+}
 
 body {
   margin: 0;
@@ -91,4 +114,60 @@ input[type="password"]:focus,
 input[type="number"]:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.3);
+}
+
+/* セーフエリア対応 */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* スライドインアニメーション */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* カードにホバーエフェクト */
+.card-interactive {
+  transition: all 0.2s ease;
+}
+
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.card-interactive:active {
+  transform: translateY(0);
+}
+
+/* 選択ボタンスタイル */
+.select-button {
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.select-button.active {
+  border-color: currentColor;
+}
+
+/* 数値インプット */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
 }

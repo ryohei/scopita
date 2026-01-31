@@ -1,126 +1,203 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useGroups } from '../hooks/useGroups'
-import { LogOut, Plus, Users, Calculator, ChevronRight } from 'lucide-react'
+import { useGameSessions } from '../hooks/useGameSessions'
+import { LogOut, Plus, Users, ChevronRight, History, TrendingUp } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { CreateGroupModal } from '../components/CreateGroupModal'
+import { SectionCard } from '../components/SectionCard'
+import { BottomNav } from '../components/BottomNav'
 
 export function HomePage() {
   const { user, signOut } = useAuth()
-  const { groups, loading, createGroup, joinGroup } = useGroups()
+  const { groups, loading: groupsLoading, createGroup, joinGroup } = useGroups()
+  const { sessions, loading: sessionsLoading } = useGameSessions()
   const [showGroupModal, setShowGroupModal] = useState(false)
 
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  }
+
+  const displayName = user?.user_metadata?.display_name || 'ゲスト'
+
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-cream pb-24">
       {/* ヘッダー */}
-      <header className="bg-mahjong-table text-white p-4 shadow-lg">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <h1 className="text-xl font-bold">🀄 スコピタくん</h1>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-1 text-sm opacity-80 hover:opacity-100"
-          >
-            <LogOut size={18} />
-            ログアウト
-          </button>
+      <header className="bg-mahjong-table rounded-b-3xl shadow-lg px-4 pt-6 pb-8">
+        <div className="max-w-2xl mx-auto">
+          {/* 上部ナビ */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <img 
+                src="/images/mascot-64.png" 
+                alt="" 
+                className="w-8 h-8 rounded-full bg-white p-0.5"
+              />
+              <span className="text-white/80 text-sm font-medium">スコピタくん</span>
+            </div>
+            <button
+              onClick={signOut}
+              className="flex items-center gap-1 text-white/70 text-sm hover:text-white transition-colors"
+            >
+              <LogOut size={16} />
+              ログアウト
+            </button>
+          </div>
+
+          {/* ウェルカムメッセージ */}
+          <div className="text-center text-white">
+            <p className="text-lg mb-1">おかえりなさい！</p>
+            <p className="text-2xl font-bold">{displayName}さん</p>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto p-4">
-        {/* ウェルカムメッセージ */}
-        <div className="card-soft p-4 mb-6">
-          <p className="text-mahjong-table font-bold">
-            ようこそ、{user?.user_metadata?.display_name || 'ゲスト'}さん！
-          </p>
-          <p className="text-gray-600 text-sm mt-1">
-            スコアを記録して、仲間とランキングを競おう！
-          </p>
-        </div>
-
+      <main className="max-w-2xl mx-auto px-4 -mt-4">
         {/* メインアクション */}
         <Link
           to="/record"
-          className="w-full bg-mahjong-table text-white py-4 rounded-2xl font-bold btn-pressable flex items-center justify-center gap-2 mb-6 shadow-lg"
+          className="block bg-white rounded-2xl shadow-card p-4 mb-4 card-interactive animate-slide-up"
         >
-          <Plus size={24} />
-          対局を記録する
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-mahjong-table rounded-2xl flex items-center justify-center shadow-button">
+              <Plus size={28} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-lg text-gray-800">対局を記録する</p>
+              <p className="text-sm text-gray-500">新しい対局結果を入力</p>
+            </div>
+            <ChevronRight size={24} className="text-gray-400" />
+          </div>
         </Link>
 
         {/* 最近の対局 */}
-        <section className="mb-6">
-          <h2 className="text-lg font-bold text-gray-700 mb-3 flex items-center gap-2">
-            📊 最近の対局
-          </h2>
-          <div className="card-soft p-4">
-            <p className="text-gray-500 text-center py-4">
-              まだ対局記録がありません
-            </p>
-          </div>
-        </section>
+        <SectionCard title="最近の対局" icon={<History size={18} />} className="mb-4">
+          {sessionsLoading ? (
+            <div className="py-6 text-center">
+              <div className="w-8 h-8 border-2 border-mahjong-table border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-gray-500 text-sm">読み込み中...</p>
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="py-8 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <History size={28} className="text-gray-400" />
+              </div>
+              <p className="text-gray-500">まだ対局記録がありません</p>
+              <p className="text-gray-400 text-sm mt-1">「対局を記録する」から始めましょう！</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {sessions.slice(0, 5).map((session) => (
+                <div
+                  key={session.id}
+                  className="flex items-center justify-between p-3 rounded-xl bg-cream-dark"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500 w-12 font-medium">
+                      {formatDate(session.date)}
+                    </span>
+                    <div>
+                      <p className="font-bold text-gray-700">
+                        {session.group_name || '単発対局'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {session.game_count}半荘
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`font-bold text-xl ${
+                    session.total_score >= 0 ? 'text-green-600' : 'text-red-500'
+                  }`}>
+                    {session.total_score > 0 ? '+' : ''}{session.total_score}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
 
         {/* 参加グループ */}
-        <section className="mb-6">
-          <h2 className="text-lg font-bold text-gray-700 mb-3 flex items-center gap-2">
-            <Users size={20} />
-            参加グループ
-          </h2>
-          <div className="card-soft p-4">
-            {loading ? (
-              <p className="text-gray-500 text-center py-4">読み込み中...</p>
-            ) : groups.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">
-                まだグループに参加していません
-              </p>
-            ) : (
-              <div className="space-y-2 mb-4">
-                {groups.map((group) => (
-                  <Link
-                    key={group.id}
-                    to={`/groups/${group.id}`}
-                    className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-mahjong-table/20 rounded-xl flex items-center justify-center">
-                        <Users size={24} className="text-mahjong-table" />
+        <SectionCard title="参加グループ" icon={<Users size={18} />} className="mb-4">
+          {groupsLoading ? (
+            <div className="py-6 text-center">
+              <div className="w-8 h-8 border-2 border-mahjong-table border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-gray-500 text-sm">読み込み中...</p>
+            </div>
+          ) : (
+            <>
+              {groups.length === 0 ? (
+                <div className="py-6 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Users size={28} className="text-gray-400" />
+                  </div>
+                  <p className="text-gray-500">まだグループに参加していません</p>
+                </div>
+              ) : (
+                <div className="space-y-2 mb-4">
+                  {groups.map((group) => (
+                    <Link
+                      key={group.id}
+                      to={`/groups/${group.id}`}
+                      className="flex items-center justify-between p-3 rounded-xl hover:bg-cream-dark transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-mahjong-table/15 rounded-xl flex items-center justify-center">
+                          <Users size={22} className="text-mahjong-table" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800">{group.name}</p>
+                          <p className="text-sm text-gray-500">
+                            {group.member_count}人のメンバー
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-gray-800">{group.name}</p>
-                        <p className="text-sm text-gray-500">
-                          {group.member_count}人のメンバー
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronRight size={20} className="text-gray-400" />
-                  </Link>
-                ))}
-              </div>
-            )}
-            <button
-              onClick={() => setShowGroupModal(true)}
-              className="w-full border-2 border-dashed border-gray-300 text-gray-500 py-3 rounded-xl font-bold hover:border-mahjong-table hover:text-mahjong-table transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus size={20} />
-              グループを作成 / 参加
-            </button>
-          </div>
-        </section>
+                      <ChevronRight size={20} className="text-gray-400" />
+                    </Link>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={() => setShowGroupModal(true)}
+                className="w-full border-2 border-dashed border-mahjong-table/30 text-mahjong-table py-3.5 rounded-xl font-bold hover:border-mahjong-table hover:bg-mahjong-table/5 transition-all flex items-center justify-center gap-2"
+              >
+                <Plus size={20} />
+                グループを作成 / 参加
+              </button>
+            </>
+          )}
+        </SectionCard>
 
-        {/* テンピタくんへのリンク */}
-        <a
-          href="https://mahjong-colc.vercel.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="card-soft p-4 flex items-center gap-3 hover:shadow-lg transition-shadow block"
-        >
-          <div className="bg-mahjong-table text-white p-3 rounded-xl">
-            <Calculator size={24} />
-          </div>
-          <div>
-            <p className="font-bold text-mahjong-table">テンピタくん</p>
-            <p className="text-sm text-gray-500">符計算・点数計算はこちら</p>
-          </div>
-        </a>
+        {/* 成績サマリー */}
+        {sessions.length > 0 && (
+          <SectionCard title="成績サマリー" icon={<TrendingUp size={18} />}>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-cream-dark rounded-xl p-4 text-center">
+                <p className="text-gray-500 text-sm mb-1">対局数</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {sessions.reduce((sum, s) => sum + s.game_count, 0)}
+                </p>
+                <p className="text-xs text-gray-400">半荘</p>
+              </div>
+              <div className="bg-cream-dark rounded-xl p-4 text-center">
+                <p className="text-gray-500 text-sm mb-1">トータル</p>
+                <p className={`text-2xl font-bold ${
+                  sessions.reduce((sum, s) => sum + s.total_score, 0) >= 0 
+                    ? 'text-green-600' 
+                    : 'text-red-500'
+                }`}>
+                  {sessions.reduce((sum, s) => sum + s.total_score, 0) > 0 ? '+' : ''}
+                  {sessions.reduce((sum, s) => sum + s.total_score, 0)}
+                </p>
+                <p className="text-xs text-gray-400">ポイント</p>
+              </div>
+            </div>
+          </SectionCard>
+        )}
       </main>
+
+      {/* ボトムナビ */}
+      <BottomNav />
 
       {/* グループ作成/参加モーダル */}
       <CreateGroupModal

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { X, Plus } from 'lucide-react'
+import { X, Plus, Users, UserPlus } from 'lucide-react'
+import { TabSwitch } from './TabSwitch'
 
 interface CreateGroupModalProps {
   isOpen: boolean
@@ -28,9 +29,10 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
         setLoading(false)
         return
       }
-      const { error } = await onCreateGroup(name.trim())
-      if (error) {
-        setError('グループの作成に失敗しました')
+      const result = await onCreateGroup(name.trim())
+      if (result.error) {
+        console.error('Create group error:', result.error)
+        setError(`グループの作成に失敗しました: ${result.error.message}`)
       } else {
         onClose()
         setName('')
@@ -53,46 +55,51 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
     setLoading(false)
   }
 
+  const modeOptions = [
+    { value: 'create' as const, label: '新規作成', icon: <Plus size={16} /> },
+    { value: 'join' as const, label: '参加する', icon: <UserPlus size={16} /> },
+  ]
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-md p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">グループ</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={24} />
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50" onClick={onClose}>
+      <div 
+        className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md p-6 animate-slide-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-mahjong-table/10 rounded-xl flex items-center justify-center">
+              <Users size={20} className="text-mahjong-table" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-800">グループ</h2>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
+          >
+            <X size={22} />
           </button>
         </div>
 
         {/* タブ */}
-        <div className="flex mb-4 bg-gray-100 rounded-xl p-1">
-          <button
-            onClick={() => { setMode('create'); setError(null) }}
-            className={`flex-1 py-2 rounded-lg font-bold transition-colors ${
-              mode === 'create' ? 'bg-white text-mahjong-table shadow' : 'text-gray-500'
-            }`}
-          >
-            新規作成
-          </button>
-          <button
-            onClick={() => { setMode('join'); setError(null) }}
-            className={`flex-1 py-2 rounded-lg font-bold transition-colors ${
-              mode === 'join' ? 'bg-white text-mahjong-table shadow' : 'text-gray-500'
-            }`}
-          >
-            参加する
-          </button>
+        <div className="mb-5">
+          <TabSwitch 
+            options={modeOptions} 
+            value={mode} 
+            onChange={(v) => { setMode(v); setError(null) }}
+          />
         </div>
 
         <form onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">
+            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm mb-4 font-medium">
               {error}
             </div>
           )}
 
           {mode === 'create' ? (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 グループ名
               </label>
               <input
@@ -100,7 +107,7 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="例: 週末麻雀会"
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-mahjong-table"
+                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
               />
               <p className="text-xs text-gray-500 mt-2">
                 作成後、招待コードが発行されます
@@ -108,7 +115,7 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 招待コード
               </label>
               <input
@@ -116,7 +123,7 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 placeholder="例: ABC123"
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-mahjong-table uppercase"
+                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors uppercase text-center text-xl font-bold tracking-widest"
                 maxLength={6}
               />
               <p className="text-xs text-gray-500 mt-2">
@@ -128,12 +135,15 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-4 bg-mahjong-table text-white py-3 rounded-xl font-bold btn-pressable flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full mt-5 bg-mahjong-table text-white py-4 rounded-2xl font-bold btn-pressable flex items-center justify-center gap-2 disabled:opacity-50 shadow-button text-lg"
           >
-            <Plus size={20} />
+            {mode === 'create' ? <Plus size={22} /> : <UserPlus size={22} />}
             {loading ? '処理中...' : mode === 'create' ? 'グループを作成' : 'グループに参加'}
           </button>
         </form>
+
+        {/* モバイル用の下部余白 */}
+        <div className="h-2 sm:hidden"></div>
       </div>
     </div>
   )

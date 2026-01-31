@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { UserPlus } from 'lucide-react'
+import { UserPlus, Calculator } from 'lucide-react'
 
 export function SignUpPage() {
   const [email, setEmail] = useState('')
@@ -43,27 +43,41 @@ export function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* ヘッダー */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-mahjong-table mb-2">
-            🀄 スコピタくん
-          </h1>
-          <p className="text-gray-600">新規登録</p>
-        </div>
+    <div className="min-h-screen bg-cream flex flex-col">
+      {/* ヘッダー */}
+      <header className="bg-mahjong-table rounded-b-3xl shadow-lg px-4 pt-6 pb-8">
+        <div className="max-w-md mx-auto">
+          {/* キャラクター（コンパクト） */}
+          <div className="flex justify-center mb-3">
+            <div className="w-20 h-20 rounded-full bg-white/90 p-1 shadow-lg animate-float">
+              <img 
+                src="/images/mascot-256.png" 
+                alt="スコピタくん" 
+                className="w-full h-full object-cover rounded-full"
+              />
+            </div>
+          </div>
 
-        {/* フォーム */}
-        <div className="card-soft p-6">
+          {/* タイトル */}
+          <div className="text-center text-white">
+            <h1 className="text-2xl font-bold mb-1">スコピタくん</h1>
+            <p className="text-sm opacity-90">新規登録</p>
+          </div>
+        </div>
+      </header>
+
+      {/* フォーム */}
+      <main className="flex-1 max-w-md w-full mx-auto px-4 -mt-4">
+        <div className="bg-white rounded-2xl shadow-card p-6 animate-slide-up">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+              <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-medium">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="displayName" className="block text-sm font-bold text-gray-700 mb-2">
                 表示名
               </label>
               <input
@@ -72,14 +86,14 @@ export function SignUpPage() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-mahjong-table"
+                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
                 placeholder="ニックネーム"
               />
-              <p className="text-xs text-gray-500 mt-1">他のユーザーに表示される名前です</p>
+              <p className="text-xs text-gray-500 mt-1.5">他のユーザーに表示される名前です</p>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-2">
                 メールアドレス
               </label>
               <input
@@ -88,13 +102,13 @@ export function SignUpPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-mahjong-table"
+                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
                 placeholder="example@email.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-2">
                 パスワード
               </label>
               <input
@@ -103,24 +117,24 @@ export function SignUpPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-mahjong-table"
+                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
                 placeholder="••••••••"
               />
-              <p className="text-xs text-gray-500 mt-1">6文字以上</p>
+              <p className="text-xs text-gray-500 mt-1.5">6文字以上</p>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-mahjong-table text-white py-3 rounded-xl font-bold btn-pressable flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full bg-mahjong-table text-white py-4 rounded-2xl font-bold btn-pressable flex items-center justify-center gap-2 disabled:opacity-50 shadow-button text-lg mt-6"
             >
-              <UserPlus size={20} />
+              <UserPlus size={22} />
               {loading ? '登録中...' : '登録する'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600">
               アカウントをお持ちの方は
               <Link to="/login" className="text-mahjong-table font-bold ml-1 hover:underline">
                 ログイン
@@ -130,17 +144,26 @@ export function SignUpPage() {
         </div>
 
         {/* テンピタくんへのリンク */}
-        <div className="mt-6 text-center">
-          <a
-            href="https://mahjong-colc.vercel.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-gray-500 hover:text-mahjong-table"
-          >
-            🧮 符計算は「テンピタくん」へ →
-          </a>
-        </div>
-      </div>
+        <a
+          href="https://mahjong-colc.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 bg-white rounded-2xl shadow-soft p-4 flex items-center gap-3 card-interactive block"
+        >
+          <div className="w-12 h-12 bg-mahjong-table/10 rounded-xl flex items-center justify-center">
+            <Calculator size={24} className="text-mahjong-table" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-mahjong-table">テンピタくん</p>
+            <p className="text-sm text-gray-500">符計算・点数計算はこちら →</p>
+          </div>
+        </a>
+      </main>
+
+      {/* フッター */}
+      <footer className="py-6 text-center text-gray-400 text-sm">
+        <p>© 2025 スコピタくん</p>
+      </footer>
     </div>
   )
 }

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, Trophy, Users } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Trophy, Users, Calendar, UserCircle } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useGroups } from '../hooks/useGroups'
 import { supabase } from '../lib/supabase'
+import { SectionCard } from '../components/SectionCard'
+import { TabSwitch } from '../components/TabSwitch'
 
 interface Player {
   id: string
@@ -38,8 +40,11 @@ export function RecordPage() {
   const [mode, setMode] = useState<'group' | 'free'>('free')
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+
+  // プレイヤー1は自分（ログインユーザー）
+  const myName = user?.user_metadata?.display_name || 'プレイヤー1'
   const [players, setPlayers] = useState<Player[]>([
-    { id: '1', name: '', isGuest: true },
+    { id: '1', name: myName, isGuest: false, userId: user?.id },
     { id: '2', name: '', isGuest: true },
     { id: '3', name: '', isGuest: true },
     { id: '4', name: '', isGuest: true },
@@ -57,6 +62,22 @@ export function RecordPage() {
     hasOka: true,
     startScore: 25000,
   })
+
+  // ユーザー情報が更新されたらプレイヤー1を更新
+  useEffect(() => {
+    if (user) {
+      setPlayers(prev => {
+        const updated = [...prev]
+        updated[0] = {
+          id: '1',
+          name: user.user_metadata?.display_name || 'プレイヤー1',
+          isGuest: false,
+          userId: user.id,
+        }
+        return updated
+      })
+    }
+  }, [user])
 
   // グループ選択時にルールを読み込み
   useEffect(() => {
@@ -270,80 +291,88 @@ export function RecordPage() {
       }
 
       navigate('/')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save error:', error)
-      alert('保存に失敗しました')
+      alert(`保存に失敗しました: ${error?.message || JSON.stringify(error)}`)
     } finally {
       setSaving(false)
     }
   }
 
+  const modeOptions = [
+    { value: 'group' as const, label: 'グループ', icon: <Users size={16} /> },
+    { value: 'free' as const, label: '単発', icon: <UserCircle size={16} /> },
+  ]
+
   return (
-    <div className="min-h-screen bg-cream pb-24">
+    <div className="min-h-screen bg-cream pb-32">
       {/* ヘッダー */}
-      <header className="bg-mahjong-table text-white p-4">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link to="/" className="hover:opacity-80">
-            <ArrowLeft size={24} />
-          </Link>
-          <h1 className="text-xl font-bold">対局記録</h1>
+      <header className="bg-mahjong-table rounded-b-3xl shadow-lg">
+        <div className="max-w-2xl mx-auto px-4 pt-4 pb-6">
+          <div className="flex items-center gap-3">
+            <Link to="/" className="text-white/80 hover:text-white transition-colors">
+              <ArrowLeft size={24} />
+            </Link>
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-white">対局記録</h1>
+              <p className="text-white/70 text-sm">スコアを入力してね！</p>
+            </div>
+            <img 
+              src="/images/mascot-64.png" 
+              alt="" 
+              className="w-10 h-10 rounded-full bg-white p-0.5 shadow"
+            />
+          </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto p-4">
-        {/* モード選択 */}
-        <div className="card-soft p-4 mb-4">
-          <div className="flex mb-3 bg-gray-100 rounded-xl p-1">
-            <button
-              onClick={() => setMode('group')}
-              className={`flex-1 py-2 rounded-lg font-bold flex items-center justify-center gap-1 transition-colors ${
-                mode === 'group' ? 'bg-white text-mahjong-table shadow' : 'text-gray-500'
-              }`}
-            >
-              <Users size={18} />
-              グループ
-            </button>
-            <button
-              onClick={() => setMode('free')}
-              className={`flex-1 py-2 rounded-lg font-bold transition-colors ${
-                mode === 'free' ? 'bg-white text-mahjong-table shadow' : 'text-gray-500'
-              }`}
-            >
-              単発（フリー）
-            </button>
+      <main className="max-w-2xl mx-auto px-4 -mt-3">
+        {/* 基本設定 */}
+        <SectionCard title="基本設定" className="mb-4 animate-slide-up">
+          {/* モード選択 */}
+          <div className="mb-4">
+            <p className="text-sm font-medium text-gray-600 mb-2">対局モード</p>
+            <TabSwitch options={modeOptions} value={mode} onChange={setMode} />
           </div>
 
           {mode === 'group' && (
-            <select
-              value={selectedGroupId}
-              onChange={(e) => setSelectedGroupId(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 mb-3"
-            >
-              <option value="">グループを選択</option>
-              {groups.map(g => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-600 mb-2">グループ選択</p>
+              <select
+                value={selectedGroupId}
+                onChange={(e) => setSelectedGroupId(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors font-medium"
+              >
+                <option value="">グループを選択してください</option>
+                {groups.map(g => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">日付</label>
+            <p className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-1.5">
+              <Calendar size={14} />
+              日付
+            </p>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300"
+              className="w-full px-4 py-3 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors font-medium"
             />
           </div>
-        </div>
+        </SectionCard>
 
         {/* プレイヤー入力 */}
-        <div className="card-soft p-4 mb-4">
-          <h3 className="font-bold text-gray-700 mb-3">参加者</h3>
+        <SectionCard title="参加者" icon={<Users size={16} />} className="mb-4">
           <div className="space-y-2">
             {players.map((player, index) => (
-              <div key={player.id} className="flex items-center gap-2">
-                <span className="w-8 h-8 bg-mahjong-table/20 rounded-full flex items-center justify-center text-sm font-bold text-mahjong-table">
+              <div key={player.id} className="flex items-center gap-3">
+                <span className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
+                  index === 0 ? 'bg-mahjong-table text-white' : 'bg-cream-dark text-gray-600'
+                }`}>
                   {index + 1}
                 </span>
                 <input
@@ -355,23 +384,28 @@ export function RecordPage() {
                     setPlayers(newPlayers)
                   }}
                   placeholder={`プレイヤー${index + 1}`}
-                  className="flex-1 px-3 py-2 rounded-lg border border-gray-300"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                  disabled={index === 0}
                 />
               </div>
             ))}
           </div>
-        </div>
+        </SectionCard>
 
         {/* 半荘入力 */}
         {games.map((game, gameIndex) => (
-          <div key={game.id} className="card-soft p-4 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-gray-700">半荘 {gameIndex + 1}</h3>
+          <div key={game.id} className="bg-white rounded-2xl shadow-soft p-4 mb-4 animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="bg-mahjong-table text-white text-sm font-bold px-3 py-1 rounded-lg">
+                  半荘 {gameIndex + 1}
+                </span>
+              </div>
               <button
                 onClick={() => removeGame(game.id)}
-                className="text-red-500 hover:text-red-700"
+                className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
               >
-                <Trash2 size={20} />
+                <Trash2 size={18} />
               </button>
             </div>
 
@@ -380,54 +414,61 @@ export function RecordPage() {
                 const scoreData = game.scores.find(s => s.playerId === player.id)
                 return (
                   <div key={player.id} className="flex items-center gap-2">
-                    <span className="w-20 text-sm font-medium truncate">
+                    <span className="w-20 text-sm font-medium text-gray-700 truncate">
                       {player.name || `P${players.indexOf(player) + 1}`}
                     </span>
-                    <input
-                      type="number"
-                      value={scoreData?.rawScore || ''}
-                      onChange={(e) => updateRawScore(game.id, player.id, e.target.value)}
-                      placeholder="素点"
-                      className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-right"
-                    />
-                    {scoreData?.rank ? (
-                      <span className={`w-16 text-right font-bold ${
-                        scoreData.score >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {scoreData.score > 0 ? '+' : ''}{scoreData.score}
-                      </span>
-                    ) : (
-                      <span className="w-16" />
-                    )}
+                    <div className="flex-1 relative">
+                      <input
+                        type="number"
+                        value={scoreData?.rawScore || ''}
+                        onChange={(e) => updateRawScore(game.id, player.id, e.target.value)}
+                        placeholder="素点"
+                        className="w-full px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors text-right font-medium"
+                      />
+                    </div>
+                    <div className="w-16 text-right">
+                      {scoreData?.rank ? (
+                        <span className={`font-bold text-lg ${
+                          scoreData.score >= 0 ? 'text-green-600' : 'text-red-500'
+                        }`}>
+                          {scoreData.score > 0 ? '+' : ''}{scoreData.score}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </div>
                   </div>
                 )
               })}
             </div>
 
             {/* 役満記録 */}
-            <div className="border-t pt-3">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="border-t-2 border-cream-dark pt-4">
+              <div className="flex items-center gap-2 mb-3">
                 <Trophy size={16} className="text-yellow-500" />
-                <span className="text-sm font-medium text-gray-600">役満</span>
+                <span className="text-sm font-bold text-gray-700">役満が出た？</span>
               </div>
               {game.yakuman.map((y, index) => (
-                <div key={index} className="flex items-center gap-2 mb-2 text-sm">
-                  <span>{players.find(p => p.id === y.playerId)?.name}: {y.type}</span>
+                <div key={index} className="flex items-center gap-2 mb-2 bg-yellow-50 p-2 rounded-lg">
+                  <Trophy size={14} className="text-yellow-500" />
+                  <span className="text-sm font-medium flex-1">
+                    {players.find(p => p.id === y.playerId)?.name}: {y.type}
+                  </span>
                   <button
                     onClick={() => removeYakuman(game.id, index)}
-                    className="text-red-500"
+                    className="text-red-400 hover:text-red-600"
                   >
                     <Trash2 size={14} />
                   </button>
                 </div>
               ))}
               <div className="flex gap-2">
-                <select className="flex-1 px-2 py-1 rounded border text-sm" id={`yakuman-player-${game.id}`}>
+                <select className="flex-1 px-3 py-2 rounded-xl bg-cream-dark text-sm font-medium" id={`yakuman-player-${game.id}`}>
                   {players.map(p => (
                     <option key={p.id} value={p.id}>{p.name || `P${players.indexOf(p) + 1}`}</option>
                   ))}
                 </select>
-                <select className="flex-1 px-2 py-1 rounded border text-sm" id={`yakuman-type-${game.id}`}>
+                <select className="flex-1 px-3 py-2 rounded-xl bg-cream-dark text-sm font-medium" id={`yakuman-type-${game.id}`}>
                   {YAKUMAN_TYPES.map(type => (
                     <option key={type} value={type}>{type}</option>
                   ))}
@@ -438,7 +479,7 @@ export function RecordPage() {
                     const typeSelect = document.getElementById(`yakuman-type-${game.id}`) as HTMLSelectElement
                     addYakuman(game.id, playerSelect.value, typeSelect.value)
                   }}
-                  className="px-3 py-1 bg-yellow-500 text-white rounded text-sm font-bold"
+                  className="px-4 py-2 bg-yellow-500 text-white rounded-xl text-sm font-bold hover:bg-yellow-600 transition-colors shadow-sm"
                 >
                   追加
                 </button>
@@ -449,51 +490,67 @@ export function RecordPage() {
 
         <button
           onClick={addGame}
-          className="w-full border-2 border-dashed border-gray-300 text-gray-500 py-3 rounded-xl font-bold hover:border-mahjong-table hover:text-mahjong-table transition-colors flex items-center justify-center gap-2 mb-4"
+          className="w-full border-2 border-dashed border-mahjong-table/30 text-mahjong-table py-4 rounded-2xl font-bold hover:border-mahjong-table hover:bg-mahjong-table/5 transition-all flex items-center justify-center gap-2 mb-4"
         >
-          <Plus size={20} />
+          <Plus size={22} />
           半荘を追加
         </button>
 
         {/* 集計 */}
         {games.length > 0 && (
-          <div className="card-soft p-4 mb-4">
-            <h3 className="font-bold text-gray-700 mb-3">本日の集計</h3>
+          <SectionCard title="本日の集計" icon={<Trophy size={16} />} className="mb-4">
             <div className="space-y-2">
               {players
                 .map(p => ({ ...p, total: getTotalScore(p.id) }))
                 .sort((a, b) => b.total - a.total)
                 .map((player, index) => (
-                  <div key={player.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  <div key={player.id} className="flex items-center justify-between p-3 rounded-xl bg-cream-dark">
+                    <div className="flex items-center gap-3">
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                         index === 0 ? 'bg-yellow-400 text-white' :
                         index === 1 ? 'bg-gray-300 text-gray-700' :
                         index === 2 ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-500'
                       }`}>
                         {index + 1}
                       </span>
-                      <span className="font-medium">{player.name || `P${players.indexOf(player) + 1}`}</span>
+                      <span className="font-bold text-gray-800">{player.name || `P${players.indexOf(player) + 1}`}</span>
                     </div>
-                    <span className={`font-bold ${
-                      player.total >= 0 ? 'text-green-600' : 'text-red-600'
+                    <span className={`font-bold text-xl ${
+                      player.total >= 0 ? 'text-green-600' : 'text-red-500'
                     }`}>
                       {player.total > 0 ? '+' : ''}{player.total}
                     </span>
                   </div>
                 ))}
             </div>
-          </div>
+          </SectionCard>
         )}
       </main>
 
-      {/* 保存ボタン（固定） */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-cream border-t">
-        <div className="max-w-2xl mx-auto">
+      {/* 固定フッター */}
+      <div className="fixed bottom-0 left-0 right-0 bg-mahjong-table shadow-lg safe-area-bottom">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
+          <div className="flex-1">
+            {games.length > 0 && (
+              <div className="text-white">
+                <span className="text-white/70 text-sm">{games.length}半荘</span>
+                <span className="ml-2 text-lg font-bold">
+                  合計: {games.reduce((sum, g) => {
+                    const myScore = g.scores.find(s => s.playerId === '1')
+                    return sum + (myScore?.score || 0)
+                  }, 0) > 0 ? '+' : ''}
+                  {games.reduce((sum, g) => {
+                    const myScore = g.scores.find(s => s.playerId === '1')
+                    return sum + (myScore?.score || 0)
+                  }, 0)}
+                </span>
+              </div>
+            )}
+          </div>
           <button
             onClick={handleSave}
             disabled={saving || games.length === 0}
-            className="w-full bg-mahjong-table text-white py-4 rounded-2xl font-bold btn-pressable disabled:opacity-50"
+            className="bg-white text-mahjong-table px-8 py-3 rounded-xl font-bold btn-pressable disabled:opacity-50 shadow-lg"
           >
             {saving ? '保存中...' : '保存する'}
           </button>
