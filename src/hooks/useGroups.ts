@@ -13,13 +13,17 @@ interface Group {
 interface GroupMember {
   id: string
   group_id: string
-  user_id: string
+  user_id: string | null
+  guest_name: string | null
   role: 'admin' | 'member'
   joined_at: string
   users: {
     display_name: string
     avatar_url: string | null
-  }
+  } | null
+  // 表示用
+  displayName: string
+  isGuest: boolean
 }
 
 interface GroupRule {
@@ -173,53 +177,90 @@ export function useGroups() {
 }
 
 export function useGroupDetail(groupId: string) {
+  const { user } = useAuth()
   const [group, setGroup] = useState<Group | null>(null)
   const [members, setMembers] = useState<GroupMember[]>([])
   const [rules, setRules] = useState<GroupRule | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const fetchGroupDetail = async () => {
+    if (!groupId) return
+
+    setLoading(true)
+
+    // グループ情報
+    const { data: groupData } = await supabase
+      .from('groups')
+      .select('*')
+      .eq('id', groupId)
+      .single()
+
+    setGroup(groupData)
+
+    // メンバー一覧
+    const { data: membersData } = await supabase
+      .from('group_members')
+      .select(`
+        id,
+        group_id,
+        user_id,
+        guest_name,
+        role,
+        joined_at
+      `)
+      .eq('group_id', groupId)
+
+    // ユーザー情報を取得（user_idがあるメンバーのみ）
+    const userIds = (membersData || [])
+      .filter(m => m.user_id)
+      .map(m => m.user_id)
+
+    let userMap: Record<string, { display_name: string; avatar_url: string | null }> = {}
+
+    if (userIds.length > 0) {
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, display_name, avatar_url')
+        .in('id', userIds)
+
+      if (usersData) {
+        usersData.forEach(u => {
+          userMap[u.id] = { display_name: u.display_name, avatar_url: u.avatar_url }
+        })
+      }
+    }
+
+    // メンバーデータを整形
+    const formattedMembers: GroupMember[] = (membersData || []).map(m => ({
+      id: m.id,
+      group_id: m.group_id,
+      user_id: m.user_id,
+      guest_name: m.guest_name,
+      role: m.role as 'admin' | 'member',
+      joined_at: m.joined_at,
+      users: m.user_id ? userMap[m.user_id] || null : null,
+      displayName: m.user_id
+        ? (userMap[m.user_id]?.display_name || 'Unknown')
+        : (m.guest_name || 'ゲスト'),
+      isGuest: !m.user_id,
+    }))
+
+    setMembers(formattedMembers)
+
+    // ルール
+    const { data: rulesData } = await supabase
+      .from('group_rules')
+      .select('*')
+      .eq('group_id', groupId)
+      .single()
+
+    setRules(rulesData)
+
+    setLoading(false)
+  }
+
   useEffect(() => {
-    const fetchGroupDetail = async () => {
-      setLoading(true)
-
-      // グループ情報
-      const { data: groupData } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('id', groupId)
-        .single()
-
-      setGroup(groupData)
-
-      // メンバー一覧
-      const { data: membersData } = await supabase
-        .from('group_members')
-        .select(`
-          *,
-          users (
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('group_id', groupId)
-
-      setMembers(membersData as GroupMember[] || [])
-
-      // ルール
-      const { data: rulesData } = await supabase
-        .from('group_rules')
-        .select('*')
-        .eq('group_id', groupId)
-        .single()
-
-      setRules(rulesData)
-
-      setLoading(false)
-    }
-
-    if (groupId) {
-      fetchGroupDetail()
-    }
+    fetchGroupDetail()
   }, [groupId])
 
   const updateRules = async (newRules: Partial<GroupRule>) => {
@@ -237,11 +278,56 @@ export function useGroupDetail(groupId: string) {
     return { error }
   }
 
+  // ゲストメンバーを追加
+  const addGuestMember = async (guestName: string) => {
+    if (!groupId) return { error: new Error('No group ID') }
+
+    const { data, error } = await supabase
+      .from('group_members')
+      .insert({
+        group_id: groupId,
+        guest_name: guestName,
+        role: 'member',
+      })
+      .select()
+      .single()
+
+    if (!error) {
+      await fetchGroupDetail()
+    }
+
+    return { data, error }
+  }
+
+  // メンバーを削除（ゲストのみ削除可能）
+  const removeMember = async (memberId: string) => {
+    const member = members.find(m => m.id === memberId)
+    if (!member) return { error: new Error('Member not found') }
+
+    const { error } = await supabase
+      .from('group_members')
+      .delete()
+      .eq('id', memberId)
+
+    if (!error) {
+      await fetchGroupDetail()
+    }
+
+    return { error }
+  }
+
+  // 自分が管理者かどうか
+  const isAdmin = members.some(m => m.user_id === user?.id && m.role === 'admin')
+
   return {
     group,
     members,
     rules,
     loading,
     updateRules,
+    addGuestMember,
+    removeMember,
+    isAdmin,
+    refetch: fetchGroupDetail,
   }
 }

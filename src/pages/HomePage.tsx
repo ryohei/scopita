@@ -89,9 +89,10 @@ export function HomePage() {
           ) : (
             <div className="space-y-2">
               {sessions.slice(0, 5).map((session) => (
-                <div
+                <Link
                   key={session.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-cream-dark"
+                  to={`/sessions/${session.id}`}
+                  className="flex items-center justify-between p-3 rounded-xl bg-cream-dark hover:bg-cream-dark/80 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-gray-500 w-12 font-medium">
@@ -106,12 +107,15 @@ export function HomePage() {
                       </p>
                     </div>
                   </div>
-                  <span className={`font-bold text-xl ${
-                    session.total_score >= 0 ? 'text-green-600' : 'text-red-500'
-                  }`}>
-                    {session.total_score > 0 ? '+' : ''}{session.total_score}
-                  </span>
-                </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`font-bold text-xl ${
+                      session.total_score >= 0 ? 'text-green-600' : 'text-red-500'
+                    }`}>
+                      {session.total_score > 0 ? '+' : ''}{session.total_score}
+                    </span>
+                    <ChevronRight size={18} className="text-gray-400" />
+                  </div>
+                </Link>
               ))}
             </div>
           )}
@@ -173,11 +177,10 @@ export function HomePage() {
           <SectionCard title="成績サマリー" icon={<TrendingUp size={18} />}>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-cream-dark rounded-xl p-4 text-center">
-                <p className="text-gray-500 text-sm mb-1">対局数</p>
+                <p className="text-gray-500 text-sm mb-1">半荘数</p>
                 <p className="text-2xl font-bold text-gray-800">
                   {sessions.reduce((sum, s) => sum + s.game_count, 0)}
                 </p>
-                <p className="text-xs text-gray-400">半荘</p>
               </div>
               <div className="bg-cream-dark rounded-xl p-4 text-center">
                 <p className="text-gray-500 text-sm mb-1">トータル</p>

@@ -1,17 +1,28 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, Trophy, Users, Calendar, UserCircle } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Trophy, Users, Calendar, UserCircle, ChevronDown, Settings } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useGroups } from '../hooks/useGroups'
 import { supabase } from '../lib/supabase'
 import { SectionCard } from '../components/SectionCard'
 import { TabSwitch } from '../components/TabSwitch'
+import { YAKUMAN_TYPES } from '../constants/mahjong'
+import { calculateScore, DEFAULT_RULES, type Rules } from '../utils/scoreCalculator'
 
 interface Player {
   id: string
   name: string
   isGuest: boolean
   userId?: string
+  memberId?: string // group_members.id（グループモード時）
+}
+
+interface GroupMember {
+  id: string
+  user_id: string | null
+  guest_name: string | null
+  displayName: string
+  isGuest: boolean
 }
 
 interface GameScore {
@@ -27,11 +38,6 @@ interface Game {
   yakuman: { playerId: string; type: string }[]
 }
 
-const YAKUMAN_TYPES = [
-  '国士無双', '四暗刻', '大三元', '字一色', '小四喜', '大四喜',
-  '緑一色', '清老頭', '九蓮宝燈', '四槓子', '天和', '地和'
-]
-
 export function RecordPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -40,6 +46,7 @@ export function RecordPage() {
   const [mode, setMode] = useState<'group' | 'free'>('free')
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([])
 
   // プレイヤー1は自分（ログインユーザー）
   const myName = user?.user_metadata?.display_name || 'プレイヤー1'
@@ -51,17 +58,10 @@ export function RecordPage() {
   ])
   const [games, setGames] = useState<Game[]>([])
   const [saving, setSaving] = useState(false)
+  const [showRules, setShowRules] = useState(false)
 
   // ルール設定（デフォルト）
-  const [rules, setRules] = useState({
-    returnScore: 30000,
-    umaFirst: 20,
-    umaSecond: 10,
-    umaThird: -10,
-    umaFourth: -20,
-    hasOka: true,
-    startScore: 25000,
-  })
+  const [rules, setRules] = useState<Rules>(DEFAULT_RULES)
 
   // ユーザー情報が更新されたらプレイヤー1を更新
   useEffect(() => {
@@ -79,48 +79,111 @@ export function RecordPage() {
     }
   }, [user])
 
-  // グループ選択時にルールを読み込み
+  // グループ選択時にルールとメンバーを読み込み
   useEffect(() => {
-    if (selectedGroupId) {
-      const loadGroupRules = async () => {
-        const { data } = await supabase
+    if (selectedGroupId && user) {
+      const loadGroupData = async () => {
+        // ルールを読み込み
+        const { data: rulesData } = await supabase
           .from('group_rules')
           .select('*')
           .eq('group_id', selectedGroupId)
           .single()
 
-        if (data) {
+        if (rulesData) {
           setRules({
-            returnScore: data.return_score,
-            umaFirst: data.uma_first,
-            umaSecond: data.uma_second,
-            umaThird: data.uma_third,
-            umaFourth: data.uma_fourth,
-            hasOka: data.has_oka,
-            startScore: data.start_score,
+            returnScore: rulesData.return_score,
+            umaFirst: rulesData.uma_first,
+            umaSecond: rulesData.uma_second,
+            umaThird: rulesData.uma_third,
+            umaFourth: rulesData.uma_fourth,
+            hasOka: rulesData.has_oka,
+            startScore: rulesData.start_score,
           })
         }
+
+        // メンバーを読み込み
+        const { data: membersData } = await supabase
+          .from('group_members')
+          .select('id, user_id, guest_name')
+          .eq('group_id', selectedGroupId)
+
+        if (membersData) {
+          // ユーザー情報を取得
+          const userIds = membersData.filter(m => m.user_id).map(m => m.user_id)
+          let userMap: Record<string, string> = {}
+
+          if (userIds.length > 0) {
+            const { data: usersData } = await supabase
+              .from('users')
+              .select('id, display_name')
+              .in('id', userIds)
+
+            if (usersData) {
+              usersData.forEach(u => {
+                userMap[u.id] = u.display_name
+              })
+            }
+          }
+
+          const members: GroupMember[] = membersData.map(m => ({
+            id: m.id,
+            user_id: m.user_id,
+            guest_name: m.guest_name,
+            displayName: m.user_id
+              ? (userMap[m.user_id] || 'Unknown')
+              : (m.guest_name || 'ゲスト'),
+            isGuest: !m.user_id,
+          }))
+
+          setGroupMembers(members)
+
+          // 自分を先頭に、残り3人を自動選択
+          const myMember = members.find(m => m.user_id === user.id)
+          const otherMembers = members.filter(m => m.user_id !== user.id)
+
+          const newPlayers: Player[] = [
+            {
+              id: '1',
+              name: myMember?.displayName || myName,
+              isGuest: false,
+              userId: user.id,
+              memberId: myMember?.id,
+            },
+            ...otherMembers.slice(0, 3).map((m, i) => ({
+              id: String(i + 2),
+              name: m.displayName,
+              isGuest: m.isGuest,
+              userId: m.user_id || undefined,
+              memberId: m.id,
+            })),
+          ]
+
+          // 4人未満の場合は空のプレイヤーを追加
+          while (newPlayers.length < 4) {
+            newPlayers.push({
+              id: String(newPlayers.length + 1),
+              name: '',
+              isGuest: true,
+            })
+          }
+
+          setPlayers(newPlayers)
+        }
       }
-      loadGroupRules()
+      loadGroupData()
+    } else if (!selectedGroupId) {
+      // グループ選択解除時はリセット
+      setGroupMembers([])
+      setPlayers([
+        { id: '1', name: myName, isGuest: false, userId: user?.id },
+        { id: '2', name: '', isGuest: true },
+        { id: '3', name: '', isGuest: true },
+        { id: '4', name: '', isGuest: true },
+      ])
+      setRules(DEFAULT_RULES)
     }
-  }, [selectedGroupId])
-
-  const calculateScore = (rawScore: number, rank: number): number => {
-    // 素点から返し点を引いて千点単位に
-    let score = Math.round((rawScore - rules.returnScore) / 1000)
-
-    // ウマを加算
-    const uma = [rules.umaFirst, rules.umaSecond, rules.umaThird, rules.umaFourth]
-    score += uma[rank - 1]
-
-    // オカ（トップ取り）
-    if (rules.hasOka && rank === 1) {
-      const oka = ((rules.returnScore - rules.startScore) / 1000) * 4
-      score += oka
-    }
-
-    return score
-  }
+  }, [selectedGroupId, user, myName])
 
   const addGame = () => {
     const newGame: Game = {
@@ -153,7 +216,7 @@ export function RecordPage() {
         newScores.forEach(s => {
           const rank = sorted.findIndex(ss => ss.playerId === s.playerId) + 1
           s.rank = rank
-          s.score = calculateScore(parseInt(s.rawScore), rank)
+          s.score = calculateScore(parseInt(s.rawScore), rank, rules)
         })
       }
 
@@ -351,7 +414,7 @@ export function RecordPage() {
             </div>
           )}
 
-          <div>
+          <div className="mb-4">
             <p className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-1.5">
               <Calendar size={14} />
               日付
@@ -362,6 +425,141 @@ export function RecordPage() {
               onChange={(e) => setDate(e.target.value)}
               className="w-full px-4 py-3 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors font-medium"
             />
+          </div>
+
+          {/* ルール設定 */}
+          <div>
+            <button
+              onClick={() => setShowRules(!showRules)}
+              className="w-full flex items-center justify-between text-sm font-medium text-gray-600 mb-2"
+            >
+              <span className="flex items-center gap-1.5">
+                <Settings size={14} />
+                ルール設定
+              </span>
+              <ChevronDown size={16} className={`transition-transform ${showRules ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* ルールプレビュー（閉じている時） */}
+            {!showRules && (
+              <div className="flex flex-wrap gap-1.5">
+                <span className="bg-cream-dark text-gray-600 px-2 py-1 rounded-lg text-xs">
+                  {rules.startScore.toLocaleString()}点持ち
+                </span>
+                <span className="bg-cream-dark text-gray-600 px-2 py-1 rounded-lg text-xs">
+                  {rules.returnScore.toLocaleString()}点返し
+                </span>
+                <span className="bg-cream-dark text-gray-600 px-2 py-1 rounded-lg text-xs">
+                  ウマ {Math.abs(rules.umaSecond)}-{rules.umaFirst}
+                </span>
+                {rules.hasOka && (
+                  <span className="bg-cream-dark text-gray-600 px-2 py-1 rounded-lg text-xs">
+                    オカあり
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* ルール編集（開いている時） */}
+            {showRules && (
+              <div className="space-y-3 bg-cream-dark rounded-xl p-3">
+                {/* 持ち点・返し点 */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-xs text-gray-500">持ち点</span>
+                    <input
+                      type="number"
+                      value={rules.startScore}
+                      onChange={(e) => setRules(prev => ({ ...prev, startScore: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm"
+                      disabled={mode === 'group' && !!selectedGroupId}
+                    />
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">返し点</span>
+                    <input
+                      type="number"
+                      value={rules.returnScore}
+                      onChange={(e) => setRules(prev => ({ ...prev, returnScore: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm"
+                      disabled={mode === 'group' && !!selectedGroupId}
+                    />
+                  </div>
+                </div>
+
+                {/* ウマ */}
+                <div>
+                  <span className="text-xs text-gray-500">ウマ</span>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    <div>
+                      <span className="text-xs text-gray-400">1着</span>
+                      <input
+                        type="number"
+                        value={rules.umaFirst}
+                        onChange={(e) => setRules(prev => ({ ...prev, umaFirst: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm text-center"
+                        disabled={mode === 'group' && !!selectedGroupId}
+                      />
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-400">2着</span>
+                      <input
+                        type="number"
+                        value={rules.umaSecond}
+                        onChange={(e) => setRules(prev => ({ ...prev, umaSecond: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm text-center"
+                        disabled={mode === 'group' && !!selectedGroupId}
+                      />
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-400">3着</span>
+                      <input
+                        type="number"
+                        value={rules.umaThird}
+                        onChange={(e) => setRules(prev => ({ ...prev, umaThird: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm text-center"
+                        disabled={mode === 'group' && !!selectedGroupId}
+                      />
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-400">4着</span>
+                      <input
+                        type="number"
+                        value={rules.umaFourth}
+                        onChange={(e) => setRules(prev => ({ ...prev, umaFourth: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm text-center"
+                        disabled={mode === 'group' && !!selectedGroupId}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* オカ */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">オカあり</span>
+                  <button
+                    onClick={() => {
+                      if (mode === 'group' && selectedGroupId) return
+                      setRules(prev => ({ ...prev, hasOka: !prev.hasOka }))
+                    }}
+                    disabled={mode === 'group' && !!selectedGroupId}
+                    className={`w-12 h-6 rounded-full transition-colors ${
+                      rules.hasOka ? 'bg-mahjong-table' : 'bg-gray-300'
+                    } ${mode === 'group' && selectedGroupId ? 'opacity-50' : ''}`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      rules.hasOka ? 'translate-x-6' : 'translate-x-0.5'
+                    }`} />
+                  </button>
+                </div>
+
+                {mode === 'group' && selectedGroupId && (
+                  <p className="text-xs text-gray-400 text-center">
+                    グループのルールが適用されています
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </SectionCard>
 
@@ -375,18 +573,82 @@ export function RecordPage() {
                 }`}>
                   {index + 1}
                 </span>
-                <input
-                  type="text"
-                  value={player.name}
-                  onChange={(e) => {
-                    const newPlayers = [...players]
-                    newPlayers[index].name = e.target.value
-                    setPlayers(newPlayers)
-                  }}
-                  placeholder={`プレイヤー${index + 1}`}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
-                  disabled={index === 0}
-                />
+                {mode === 'group' && selectedGroupId && groupMembers.length > 0 ? (
+                  // グループモード: プルダウンで選択
+                  index === 0 ? (
+                    // 自分は固定表示
+                    <span className="flex-1 px-4 py-2.5 rounded-xl bg-cream-dark text-gray-700 font-medium">
+                      {player.name}
+                    </span>
+                  ) : (
+                    // 他のプレイヤーはプルダウン
+                    <div className="flex-1 relative">
+                      <select
+                        value={player.memberId || ''}
+                        onChange={(e) => {
+                          const memberId = e.target.value
+                          const member = groupMembers.find(m => m.id === memberId)
+                          const newPlayers = [...players]
+                          if (member) {
+                            newPlayers[index] = {
+                              id: player.id,
+                              name: member.displayName,
+                              isGuest: member.isGuest,
+                              userId: member.user_id || undefined,
+                              memberId: member.id,
+                            }
+                          } else {
+                            newPlayers[index] = {
+                              id: player.id,
+                              name: '',
+                              isGuest: true,
+                              memberId: undefined,
+                            }
+                          }
+                          setPlayers(newPlayers)
+                        }}
+                        className="w-full px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors appearance-none cursor-pointer font-medium"
+                      >
+                        <option value="">選択してください</option>
+                        {groupMembers
+                          .filter(m => {
+                            // 自分以外で、他のプレイヤー枠で選択されていないメンバー
+                            const isMe = m.user_id === user?.id
+                            const isSelectedByOthers = players.some(
+                              (p, i) => i !== index && p.memberId === m.id
+                            )
+                            return !isMe && !isSelectedByOthers
+                          })
+                          .map(m => (
+                            <option key={m.id} value={m.id}>
+                              {m.displayName}{m.isGuest ? ' (ゲスト)' : ''}
+                            </option>
+                          ))}
+                        {/* 現在選択中のメンバーも表示 */}
+                        {player.memberId && (
+                          <option value={player.memberId} hidden>
+                            {player.name}
+                          </option>
+                        )}
+                      </select>
+                      <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
+                  )
+                ) : (
+                  // 単発モード: テキスト入力
+                  <input
+                    type="text"
+                    value={player.name}
+                    onChange={(e) => {
+                      const newPlayers = [...players]
+                      newPlayers[index].name = e.target.value
+                      setPlayers(newPlayers)
+                    }}
+                    placeholder={`プレイヤー${index + 1}`}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                    disabled={index === 0}
+                  />
+                )}
               </div>
             ))}
           </div>

@@ -12,7 +12,12 @@ interface GameSession {
   game_count: number
 }
 
-export function useGameSessions() {
+interface UseGameSessionsOptions {
+  limit?: number // デフォルト10、undefinedで全件
+}
+
+export function useGameSessions(options: UseGameSessionsOptions = {}) {
+  const { limit = 10 } = options
   const { user } = useAuth()
   const [sessions, setSessions] = useState<GameSession[]>([])
   const [loading, setLoading] = useState(true)
@@ -27,7 +32,7 @@ export function useGameSessions() {
 
     try {
       // 自分が作成したセッションを取得
-      const { data: sessionData, error } = await supabase
+      let query = supabase
         .from('game_sessions')
         .select(`
           id,
@@ -38,7 +43,12 @@ export function useGameSessions() {
         `)
         .eq('created_by', user.id)
         .order('created_at', { ascending: false })
-        .limit(10)
+
+      if (limit) {
+        query = query.limit(limit)
+      }
+
+      const { data: sessionData, error } = await query
 
       if (error) {
         console.error('Error fetching sessions:', error)

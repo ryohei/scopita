@@ -6,6 +6,9 @@ import { SignUpPage } from './pages/SignUpPage'
 import { HomePage } from './pages/HomePage'
 import { GroupDetailPage } from './pages/GroupDetailPage'
 import { RecordPage } from './pages/RecordPage'
+import { SessionDetailPage } from './pages/SessionDetailPage'
+import { HistoryPage } from './pages/HistoryPage'
+import { SettingsPage } from './pages/SettingsPage'
 
 function App() {
   return (
@@ -35,6 +38,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <RecordPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sessions/:sessionId"
+            element={
+              <ProtectedRoute>
+                <SessionDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <HistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             }
           />
