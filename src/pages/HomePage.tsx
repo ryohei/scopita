@@ -1,9 +1,14 @@
+import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { LogOut, Plus, Users, Calculator } from 'lucide-react'
+import { useGroups } from '../hooks/useGroups'
+import { LogOut, Plus, Users, Calculator, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { CreateGroupModal } from '../components/CreateGroupModal'
 
 export function HomePage() {
   const { user, signOut } = useAuth()
+  const { groups, loading, createGroup, joinGroup } = useGroups()
+  const [showGroupModal, setShowGroupModal] = useState(false)
 
   return (
     <div className="min-h-screen bg-cream">
@@ -33,10 +38,13 @@ export function HomePage() {
         </div>
 
         {/* メインアクション */}
-        <button className="w-full bg-mahjong-table text-white py-4 rounded-2xl font-bold btn-pressable flex items-center justify-center gap-2 mb-6 shadow-lg">
+        <Link
+          to="/record"
+          className="w-full bg-mahjong-table text-white py-4 rounded-2xl font-bold btn-pressable flex items-center justify-center gap-2 mb-6 shadow-lg"
+        >
           <Plus size={24} />
           対局を記録する
-        </button>
+        </Link>
 
         {/* 最近の対局 */}
         <section className="mb-6">
@@ -57,10 +65,40 @@ export function HomePage() {
             参加グループ
           </h2>
           <div className="card-soft p-4">
-            <p className="text-gray-500 text-center py-4">
-              まだグループに参加していません
-            </p>
-            <button className="w-full mt-2 border-2 border-dashed border-gray-300 text-gray-500 py-3 rounded-xl font-bold hover:border-mahjong-table hover:text-mahjong-table transition-colors flex items-center justify-center gap-2">
+            {loading ? (
+              <p className="text-gray-500 text-center py-4">読み込み中...</p>
+            ) : groups.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">
+                まだグループに参加していません
+              </p>
+            ) : (
+              <div className="space-y-2 mb-4">
+                {groups.map((group) => (
+                  <Link
+                    key={group.id}
+                    to={`/groups/${group.id}`}
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-mahjong-table/20 rounded-xl flex items-center justify-center">
+                        <Users size={24} className="text-mahjong-table" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-800">{group.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {group.member_count}人のメンバー
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} className="text-gray-400" />
+                  </Link>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => setShowGroupModal(true)}
+              className="w-full border-2 border-dashed border-gray-300 text-gray-500 py-3 rounded-xl font-bold hover:border-mahjong-table hover:text-mahjong-table transition-colors flex items-center justify-center gap-2"
+            >
               <Plus size={20} />
               グループを作成 / 参加
             </button>
@@ -68,10 +106,11 @@ export function HomePage() {
         </section>
 
         {/* テンピタくんへのリンク */}
-        <Link
-          to="https://mahjong-colc.vercel.app"
+        <a
+          href="https://mahjong-colc.vercel.app"
           target="_blank"
-          className="card-soft p-4 flex items-center gap-3 hover:shadow-lg transition-shadow"
+          rel="noopener noreferrer"
+          className="card-soft p-4 flex items-center gap-3 hover:shadow-lg transition-shadow block"
         >
           <div className="bg-mahjong-table text-white p-3 rounded-xl">
             <Calculator size={24} />
@@ -80,8 +119,16 @@ export function HomePage() {
             <p className="font-bold text-mahjong-table">テンピタくん</p>
             <p className="text-sm text-gray-500">符計算・点数計算はこちら</p>
           </div>
-        </Link>
+        </a>
       </main>
+
+      {/* グループ作成/参加モーダル */}
+      <CreateGroupModal
+        isOpen={showGroupModal}
+        onClose={() => setShowGroupModal(false)}
+        onCreateGroup={createGroup}
+        onJoinGroup={joinGroup}
+      />
     </div>
   )
 }

@@ -4,6 +4,8 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginPage } from './pages/LoginPage'
 import { SignUpPage } from './pages/SignUpPage'
 import { HomePage } from './pages/HomePage'
+import { GroupDetailPage } from './pages/GroupDetailPage'
+import { RecordPage } from './pages/RecordPage'
 
 function App() {
   return (
@@ -17,6 +19,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups/:groupId"
+            element={
+              <ProtectedRoute>
+                <GroupDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/record"
+            element={
+              <ProtectedRoute>
+                <RecordPage />
               </ProtectedRoute>
             }
           />
