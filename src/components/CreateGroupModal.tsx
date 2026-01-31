@@ -68,10 +68,10 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
       >
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-mahjong-table/10 rounded-xl flex items-center justify-center">
-              <Users size={20} className="text-mahjong-table" />
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Users size={20} className="text-primary-dark" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">グループ</h2>
+            <h2 className="text-xl font-bold text-text-primary">グループ</h2>
           </div>
           <button 
             onClick={onClose} 
@@ -99,7 +99,7 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
 
           {mode === 'create' ? (
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-text-primary mb-2">
                 グループ名
               </label>
               <input
@@ -107,15 +107,15 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="例: 週末麻雀会"
-                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors"
               />
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-text-secondary mt-2">
                 作成後、招待コードが発行されます
               </p>
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-text-primary mb-2">
                 招待コード
               </label>
               <input
@@ -123,10 +123,10 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 placeholder="例: ABC123"
-                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors uppercase text-center text-xl font-bold tracking-widest"
+                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors uppercase text-center text-xl font-bold tracking-widest"
                 maxLength={6}
               />
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-text-secondary mt-2">
                 グループの管理者から招待コードを教えてもらってください
               </p>
             </div>
@@ -135,7 +135,7 @@ export function CreateGroupModal({ isOpen, onClose, onCreateGroup, onJoinGroup }
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-5 bg-mahjong-table text-white py-4 rounded-2xl font-bold btn-pressable flex items-center justify-center gap-2 disabled:opacity-50 shadow-button text-lg"
+            className="w-full mt-5 bg-primary text-white py-4 rounded-2xl font-bold btn-pressable flex items-center justify-center gap-2 disabled:opacity-50 shadow-button text-lg"
           >
             {mode === 'create' ? <Plus size={22} /> : <UserPlus size={22} />}
             {loading ? '処理中...' : mode === 'create' ? 'グループを作成' : 'グループに参加'}

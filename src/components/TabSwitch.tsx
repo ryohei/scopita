@@ -28,7 +28,7 @@ export function TabSwitch<T extends string>({
             onClick={() => onChange(option.value)}
             className={`flex-1 py-3 px-4 font-bold flex items-center justify-center gap-1.5 transition-colors border-b-2 -mb-px ${
               value === option.value 
-                ? 'text-mahjong-table border-mahjong-table' 
+                ? 'text-primary-dark border-primary' 
                 : 'text-gray-400 border-transparent hover:text-gray-600'
             }`}
           >
@@ -48,7 +48,7 @@ export function TabSwitch<T extends string>({
           onClick={() => onChange(option.value)}
           className={`flex-1 py-2.5 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all ${
             value === option.value 
-              ? 'bg-mahjong-table text-white shadow-md' 
+              ? 'bg-primary text-white shadow-md' 
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >

@@ -1,22 +1,38 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
 
-/* Tailwind v4: カスタムテーマ定義 */
+/* Tailwind v4: カスタムテーマ定義 - キャラクターに合わせたコーラルピンク系 */
 @theme {
-  /* カラー */
-  --color-mahjong-green: #2d5016;
-  --color-mahjong-green-light: #3a6b1e;
-  --color-mahjong-green-dark: #1e3a0f;
-  --color-mahjong-red: #d32f2f;
-  --color-mahjong-table: #1b4d3e;
-  --color-mahjong-table-light: #2a6b54;
-  --color-cream: #f5f2eb;
-  --color-cream-dark: #ebe6da;
+  /* メインカラー - コーラルピンク系 */
+  --color-primary: #e8847c;
+  --color-primary-light: #f09f99;
+  --color-primary-dark: #d66860;
+  
+  /* アクセント - 赤（キャラの「中」に合わせて） */
+  --color-accent: #c94a4a;
+  --color-accent-light: #e06565;
+  
+  /* 背景色 */
+  --color-cream: #fdf8f5;
+  --color-cream-dark: #f5ebe5;
+  
+  /* テキスト（読みやすさ重視） */
+  --color-text-primary: #4a3f3a;
+  --color-text-secondary: #7a6b63;
+  
+  /* 成功/エラー */
+  --color-success: #4caf50;
+  --color-error: #e53935;
+  
+  /* 旧カラー（互換性のため残す） */
+  --color-mahjong-table: #e8847c;
+  --color-mahjong-table-light: #f09f99;
+  --color-mahjong-red: #c94a4a;
 
   /* シャドウ */
-  --shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.1);
-  --shadow-button: 0 4px 8px rgba(0, 0, 0, 0.15);
-  --shadow-card: 0 8px 25px rgba(0, 0, 0, 0.12);
+  --shadow-soft: 0 4px 15px rgba(232, 132, 124, 0.15);
+  --shadow-button: 0 4px 8px rgba(232, 132, 124, 0.25);
+  --shadow-card: 0 8px 25px rgba(0, 0, 0, 0.08);
 
   /* アニメーション */
   --animate-float: float 3s ease-in-out infinite;
@@ -35,7 +51,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f2eb;
+  background-color: #fdf8f5;
+  color: #4a3f3a;
 }
 
 /* ボタンの押せる感を演出 */
@@ -46,25 +63,19 @@ body {
 
 .btn-pressable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 12px rgba(232, 132, 124, 0.3);
 }
 
 .btn-pressable:active {
   transform: translateY(1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 4px rgba(232, 132, 124, 0.2);
 }
 
 /* カードスタイル */
 .card-soft {
   background: white;
   border-radius: 1.25rem;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-}
-
-/* 麻雀卓風グラデーション */
-.mahjong-table-gradient {
-  background: linear-gradient(135deg, #1b4d3e 0%, #2a6b54 50%, #1b4d3e 100%);
-  background-size: 200% 200%;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
 }
 
 /* カスタムチェックボックス */
@@ -74,7 +85,7 @@ body {
   width: 1.5rem;
   height: 1.5rem;
   background-color: white;
-  border: 2px solid #d1d5db;
+  border: 2px solid #e0d5cf;
   border-radius: 0.5rem;
   cursor: pointer;
   display: flex;
@@ -84,8 +95,8 @@ body {
 }
 
 .custom-checkbox:checked {
-  background-color: #1b4d3e;
-  border-color: #1b4d3e;
+  background-color: #e8847c;
+  border-color: #e8847c;
 }
 
 .custom-checkbox:checked::after {
@@ -97,7 +108,7 @@ body {
 
 .custom-checkbox:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.3);
+  box-shadow: 0 0 0 3px rgba(232, 132, 124, 0.3);
 }
 
 /* 入力フィールド */
@@ -113,7 +124,7 @@ input[type="email"]:focus,
 input[type="password"]:focus,
 input[type="number"]:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.3);
+  box-shadow: 0 0 0 3px rgba(232, 132, 124, 0.3);
 }
 
 /* セーフエリア対応 */
@@ -144,7 +155,7 @@ input[type="number"]:focus {
 
 .card-interactive:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
 }
 
 .card-interactive:active {
@@ -170,4 +181,13 @@ input[type="number"]::-webkit-outer-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* スコア表示 */
+.score-positive {
+  color: #2e7d32;
+}
+
+.score-negative {
+  color: #c62828;
 }

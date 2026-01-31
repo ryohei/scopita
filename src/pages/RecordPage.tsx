@@ -370,7 +370,7 @@ export function RecordPage() {
   return (
     <div className="min-h-screen bg-cream pb-32">
       {/* ヘッダー */}
-      <header className="bg-mahjong-table rounded-b-3xl shadow-lg">
+      <header className="bg-primary rounded-b-3xl shadow-lg">
         <div className="max-w-2xl mx-auto px-4 pt-4 pb-6">
           <div className="flex items-center gap-3">
             <Link to="/" className="text-white/80 hover:text-white transition-colors">
@@ -394,17 +394,17 @@ export function RecordPage() {
         <SectionCard title="基本設定" className="mb-4 animate-slide-up">
           {/* モード選択 */}
           <div className="mb-4">
-            <p className="text-sm font-medium text-gray-600 mb-2">対局モード</p>
+            <p className="text-sm font-medium text-text-secondary mb-2">対局モード</p>
             <TabSwitch options={modeOptions} value={mode} onChange={setMode} />
           </div>
 
           {mode === 'group' && (
             <div className="mb-4">
-              <p className="text-sm font-medium text-gray-600 mb-2">グループ選択</p>
+              <p className="text-sm font-medium text-text-secondary mb-2">グループ選択</p>
               <select
                 value={selectedGroupId}
                 onChange={(e) => setSelectedGroupId(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors font-medium"
+                className="w-full px-4 py-3 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors font-medium"
               >
                 <option value="">グループを選択してください</option>
                 {groups.map(g => (
@@ -415,7 +415,7 @@ export function RecordPage() {
           )}
 
           <div className="mb-4">
-            <p className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-1.5">
+            <p className="text-sm font-medium text-text-secondary mb-2 flex items-center gap-1.5">
               <Calendar size={14} />
               日付
             </p>
@@ -423,7 +423,7 @@ export function RecordPage() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors font-medium"
+              className="w-full px-4 py-3 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors font-medium"
             />
           </div>
 
@@ -431,7 +431,7 @@ export function RecordPage() {
           <div>
             <button
               onClick={() => setShowRules(!showRules)}
-              className="w-full flex items-center justify-between text-sm font-medium text-gray-600 mb-2"
+              className="w-full flex items-center justify-between text-sm font-medium text-text-secondary mb-2"
             >
               <span className="flex items-center gap-1.5">
                 <Settings size={14} />
@@ -443,17 +443,17 @@ export function RecordPage() {
             {/* ルールプレビュー（閉じている時） */}
             {!showRules && (
               <div className="flex flex-wrap gap-1.5">
-                <span className="bg-cream-dark text-gray-600 px-2 py-1 rounded-lg text-xs">
+                <span className="bg-cream-dark text-text-secondary px-2 py-1 rounded-lg text-xs">
                   {rules.startScore.toLocaleString()}点持ち
                 </span>
-                <span className="bg-cream-dark text-gray-600 px-2 py-1 rounded-lg text-xs">
+                <span className="bg-cream-dark text-text-secondary px-2 py-1 rounded-lg text-xs">
                   {rules.returnScore.toLocaleString()}点返し
                 </span>
-                <span className="bg-cream-dark text-gray-600 px-2 py-1 rounded-lg text-xs">
+                <span className="bg-cream-dark text-text-secondary px-2 py-1 rounded-lg text-xs">
                   ウマ {Math.abs(rules.umaSecond)}-{rules.umaFirst}
                 </span>
                 {rules.hasOka && (
-                  <span className="bg-cream-dark text-gray-600 px-2 py-1 rounded-lg text-xs">
+                  <span className="bg-cream-dark text-text-secondary px-2 py-1 rounded-lg text-xs">
                     オカあり
                   </span>
                 )}
@@ -471,7 +471,7 @@ export function RecordPage() {
                       type="number"
                       value={rules.startScore}
                       onChange={(e) => setRules(prev => ({ ...prev, startScore: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm"
+                      className="w-full px-3 py-2 rounded-lg bg-white border-2 border-transparent focus:border-primary transition-colors text-sm"
                       disabled={mode === 'group' && !!selectedGroupId}
                     />
                   </div>
@@ -481,7 +481,7 @@ export function RecordPage() {
                       type="number"
                       value={rules.returnScore}
                       onChange={(e) => setRules(prev => ({ ...prev, returnScore: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm"
+                      className="w-full px-3 py-2 rounded-lg bg-white border-2 border-transparent focus:border-primary transition-colors text-sm"
                       disabled={mode === 'group' && !!selectedGroupId}
                     />
                   </div>
@@ -497,7 +497,7 @@ export function RecordPage() {
                         type="number"
                         value={rules.umaFirst}
                         onChange={(e) => setRules(prev => ({ ...prev, umaFirst: parseInt(e.target.value) || 0 }))}
-                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm text-center"
+                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-primary transition-colors text-sm text-center"
                         disabled={mode === 'group' && !!selectedGroupId}
                       />
                     </div>
@@ -507,7 +507,7 @@ export function RecordPage() {
                         type="number"
                         value={rules.umaSecond}
                         onChange={(e) => setRules(prev => ({ ...prev, umaSecond: parseInt(e.target.value) || 0 }))}
-                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm text-center"
+                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-primary transition-colors text-sm text-center"
                         disabled={mode === 'group' && !!selectedGroupId}
                       />
                     </div>
@@ -517,7 +517,7 @@ export function RecordPage() {
                         type="number"
                         value={rules.umaThird}
                         onChange={(e) => setRules(prev => ({ ...prev, umaThird: parseInt(e.target.value) || 0 }))}
-                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm text-center"
+                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-primary transition-colors text-sm text-center"
                         disabled={mode === 'group' && !!selectedGroupId}
                       />
                     </div>
@@ -527,7 +527,7 @@ export function RecordPage() {
                         type="number"
                         value={rules.umaFourth}
                         onChange={(e) => setRules(prev => ({ ...prev, umaFourth: parseInt(e.target.value) || 0 }))}
-                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors text-sm text-center"
+                        className="w-full px-2 py-1.5 rounded-lg bg-white border-2 border-transparent focus:border-primary transition-colors text-sm text-center"
                         disabled={mode === 'group' && !!selectedGroupId}
                       />
                     </div>
@@ -544,7 +544,7 @@ export function RecordPage() {
                     }}
                     disabled={mode === 'group' && !!selectedGroupId}
                     className={`w-12 h-6 rounded-full transition-colors ${
-                      rules.hasOka ? 'bg-mahjong-table' : 'bg-gray-300'
+                      rules.hasOka ? 'bg-primary' : 'bg-gray-300'
                     } ${mode === 'group' && selectedGroupId ? 'opacity-50' : ''}`}
                   >
                     <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
@@ -569,7 +569,7 @@ export function RecordPage() {
             {players.map((player, index) => (
               <div key={player.id} className="flex items-center gap-3">
                 <span className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
-                  index === 0 ? 'bg-mahjong-table text-white' : 'bg-cream-dark text-gray-600'
+                  index === 0 ? 'bg-primary text-white' : 'bg-cream-dark text-text-secondary'
                 }`}>
                   {index + 1}
                 </span>
@@ -577,7 +577,7 @@ export function RecordPage() {
                   // グループモード: プルダウンで選択
                   index === 0 ? (
                     // 自分は固定表示
-                    <span className="flex-1 px-4 py-2.5 rounded-xl bg-cream-dark text-gray-700 font-medium">
+                    <span className="flex-1 px-4 py-2.5 rounded-xl bg-cream-dark text-text-primary font-medium">
                       {player.name}
                     </span>
                   ) : (
@@ -607,7 +607,7 @@ export function RecordPage() {
                           }
                           setPlayers(newPlayers)
                         }}
-                        className="w-full px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors appearance-none cursor-pointer font-medium"
+                        className="w-full px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors appearance-none cursor-pointer font-medium"
                       >
                         <option value="">選択してください</option>
                         {groupMembers
@@ -645,7 +645,7 @@ export function RecordPage() {
                       setPlayers(newPlayers)
                     }}
                     placeholder={`プレイヤー${index + 1}`}
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors"
                     disabled={index === 0}
                   />
                 )}
@@ -659,7 +659,7 @@ export function RecordPage() {
           <div key={game.id} className="bg-white rounded-2xl shadow-soft p-4 mb-4 animate-slide-up">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <span className="bg-mahjong-table text-white text-sm font-bold px-3 py-1 rounded-lg">
+                <span className="bg-primary text-white text-sm font-bold px-3 py-1 rounded-lg">
                   半荘 {gameIndex + 1}
                 </span>
               </div>
@@ -676,7 +676,7 @@ export function RecordPage() {
                 const scoreData = game.scores.find(s => s.playerId === player.id)
                 return (
                   <div key={player.id} className="flex items-center gap-2">
-                    <span className="w-20 text-sm font-medium text-gray-700 truncate">
+                    <span className="w-20 text-sm font-medium text-text-primary truncate">
                       {player.name || `P${players.indexOf(player) + 1}`}
                     </span>
                     <div className="flex-1 relative">
@@ -685,13 +685,13 @@ export function RecordPage() {
                         value={scoreData?.rawScore || ''}
                         onChange={(e) => updateRawScore(game.id, player.id, e.target.value)}
                         placeholder="素点"
-                        className="w-full px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors text-right font-medium"
+                        className="w-full px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors text-right font-medium"
                       />
                     </div>
                     <div className="w-16 text-right">
                       {scoreData?.rank ? (
                         <span className={`font-bold text-lg ${
-                          scoreData.score >= 0 ? 'text-green-600' : 'text-red-500'
+                          scoreData.score >= 0 ? 'text-success' : 'text-error'
                         }`}>
                           {scoreData.score > 0 ? '+' : ''}{scoreData.score}
                         </span>
@@ -708,7 +708,7 @@ export function RecordPage() {
             <div className="border-t-2 border-cream-dark pt-4">
               <div className="flex items-center gap-2 mb-3">
                 <Trophy size={16} className="text-yellow-500" />
-                <span className="text-sm font-bold text-gray-700">役満が出た？</span>
+                <span className="text-sm font-bold text-text-primary">役満が出た？</span>
               </div>
               {game.yakuman.map((y, index) => (
                 <div key={index} className="flex items-center gap-2 mb-2 bg-yellow-50 p-2 rounded-lg">
@@ -752,7 +752,7 @@ export function RecordPage() {
 
         <button
           onClick={addGame}
-          className="w-full border-2 border-dashed border-mahjong-table/30 text-mahjong-table py-4 rounded-2xl font-bold hover:border-mahjong-table hover:bg-mahjong-table/5 transition-all flex items-center justify-center gap-2 mb-4"
+          className="w-full border-2 border-dashed border-primary/30 text-primary-dark py-4 rounded-2xl font-bold hover:border-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-2 mb-4"
         >
           <Plus size={22} />
           半荘を追加
@@ -770,15 +770,15 @@ export function RecordPage() {
                     <div className="flex items-center gap-3">
                       <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                         index === 0 ? 'bg-yellow-400 text-white' :
-                        index === 1 ? 'bg-gray-300 text-gray-700' :
+                        index === 1 ? 'bg-gray-300 text-text-primary' :
                         index === 2 ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-500'
                       }`}>
                         {index + 1}
                       </span>
-                      <span className="font-bold text-gray-800">{player.name || `P${players.indexOf(player) + 1}`}</span>
+                      <span className="font-bold text-text-primary">{player.name || `P${players.indexOf(player) + 1}`}</span>
                     </div>
                     <span className={`font-bold text-xl ${
-                      player.total >= 0 ? 'text-green-600' : 'text-red-500'
+                      player.total >= 0 ? 'text-success' : 'text-error'
                     }`}>
                       {player.total > 0 ? '+' : ''}{player.total}
                     </span>
@@ -790,7 +790,7 @@ export function RecordPage() {
       </main>
 
       {/* 固定フッター */}
-      <div className="fixed bottom-0 left-0 right-0 bg-mahjong-table shadow-lg safe-area-bottom">
+      <div className="fixed bottom-0 left-0 right-0 bg-primary shadow-lg safe-area-bottom">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
           <div className="flex-1">
             {games.length > 0 && (
@@ -812,7 +812,7 @@ export function RecordPage() {
           <button
             onClick={handleSave}
             disabled={saving || games.length === 0}
-            className="bg-white text-mahjong-table px-8 py-3 rounded-xl font-bold btn-pressable disabled:opacity-50 shadow-lg"
+            className="bg-white text-primary-dark px-8 py-3 rounded-xl font-bold btn-pressable disabled:opacity-50 shadow-lg"
           >
             {saving ? '保存中...' : '保存する'}
           </button>

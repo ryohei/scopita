@@ -39,6 +39,27 @@ interface GroupRule {
   has_oka: boolean
 }
 
+interface GroupSession {
+  id: string
+  date: string
+  game_count: number
+  created_at: string
+}
+
+interface MemberRanking {
+  memberId: string
+  displayName: string
+  isGuest: boolean
+  totalScore: number
+  gameCount: number
+  rankCounts: {
+    first: number
+    second: number
+    third: number
+    fourth: number
+  }
+}
+
 interface GroupWithDetails extends Group {
   member_count: number
   my_role: 'admin' | 'member'
@@ -181,6 +202,8 @@ export function useGroupDetail(groupId: string) {
   const [group, setGroup] = useState<Group | null>(null)
   const [members, setMembers] = useState<GroupMember[]>([])
   const [rules, setRules] = useState<GroupRule | null>(null)
+  const [sessions, setSessions] = useState<GroupSession[]>([])
+  const [rankings, setRankings] = useState<MemberRanking[]>([])
   const [loading, setLoading] = useState(true)
 
   const fetchGroupDetail = async () => {
@@ -256,6 +279,112 @@ export function useGroupDetail(groupId: string) {
 
     setRules(rulesData)
 
+    // セッション（対局履歴）
+    const { data: sessionsData } = await supabase
+      .from('game_sessions')
+      .select('id, date, created_at')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false })
+
+    // 各セッションのゲーム数を取得
+    const sessionsWithGameCount = await Promise.all(
+      (sessionsData || []).map(async (session) => {
+        const { count } = await supabase
+          .from('games')
+          .select('*', { count: 'exact', head: true })
+          .eq('session_id', session.id)
+
+        return {
+          id: session.id,
+          date: session.date,
+          created_at: session.created_at,
+          game_count: count || 0,
+        }
+      })
+    )
+
+    setSessions(sessionsWithGameCount)
+
+    // ランキング集計
+    // このグループのセッションに参加したプレイヤーの成績を集計
+    const sessionIds = sessionsWithGameCount.map(s => s.id)
+
+    const memberRankings: MemberRanking[] = []
+
+    if (sessionIds.length > 0) {
+      // このグループのセッションに参加した全プレイヤーを取得
+      const { data: allSessionPlayers } = await supabase
+        .from('session_players')
+        .select('id, session_id, user_id, guest_name')
+        .in('session_id', sessionIds)
+
+      if (allSessionPlayers) {
+        // メンバーごとに成績を集計
+        for (const member of formattedMembers) {
+          // このメンバーに対応するセッションプレイヤーを探す
+          const matchingPlayers = allSessionPlayers.filter(sp => {
+            if (member.user_id && sp.user_id) {
+              return sp.user_id === member.user_id
+            }
+            if (member.guest_name && sp.guest_name) {
+              return sp.guest_name === member.guest_name
+            }
+            return false
+          })
+
+          let totalScore = 0
+          let gameCount = 0
+          const rankCounts = { first: 0, second: 0, third: 0, fourth: 0 }
+
+          if (matchingPlayers.length > 0) {
+            const playerIds = matchingPlayers.map(p => p.id)
+
+            // 各プレイヤーの結果を取得
+            const { data: results } = await supabase
+              .from('game_results')
+              .select('score, rank')
+              .in('player_id', playerIds)
+
+            if (results) {
+              results.forEach(r => {
+                totalScore += r.score
+                gameCount++
+                if (r.rank === 1) rankCounts.first++
+                else if (r.rank === 2) rankCounts.second++
+                else if (r.rank === 3) rankCounts.third++
+                else if (r.rank === 4) rankCounts.fourth++
+              })
+            }
+          }
+
+          memberRankings.push({
+            memberId: member.id,
+            displayName: member.displayName,
+            isGuest: member.isGuest,
+            totalScore,
+            gameCount,
+            rankCounts,
+          })
+        }
+      }
+    } else {
+      // セッションがない場合は全メンバーを0で初期化
+      for (const member of formattedMembers) {
+        memberRankings.push({
+          memberId: member.id,
+          displayName: member.displayName,
+          isGuest: member.isGuest,
+          totalScore: 0,
+          gameCount: 0,
+          rankCounts: { first: 0, second: 0, third: 0, fourth: 0 },
+        })
+      }
+    }
+
+    // スコア順でソート
+    memberRankings.sort((a, b) => b.totalScore - a.totalScore)
+    setRankings(memberRankings)
+
     setLoading(false)
   }
 
@@ -323,6 +452,8 @@ export function useGroupDetail(groupId: string) {
     group,
     members,
     rules,
+    sessions,
+    rankings,
     loading,
     updateRules,
     addGuestMember,

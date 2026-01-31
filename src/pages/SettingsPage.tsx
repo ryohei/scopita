@@ -151,7 +151,7 @@ export function SettingsPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 rounded-xl bg-cream-dark">
               <span className="text-gray-600">アプリ名</span>
-              <span className="font-bold text-gray-800">スコピタくん</span>
+              <span className="font-bold text-gray-800">スコピタちゃん</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-xl bg-cream-dark">
               <span className="text-gray-600">バージョン</span>

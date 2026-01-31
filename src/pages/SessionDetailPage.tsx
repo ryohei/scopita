@@ -307,7 +307,18 @@ export function SessionDetailPage() {
           <SectionCard title="集計" icon={<Trophy size={16} />} className="mb-4">
             <div className="space-y-2">
               {session.players
-                .map(p => ({ ...p, total: getTotalScore(p.id) }))
+                .map(p => {
+                  // 順位カウントを計算
+                  const rankCounts = { first: 0, second: 0, third: 0, fourth: 0 }
+                  session.games.forEach(game => {
+                    const result = game.results.find(r => r.playerId === p.id)
+                    if (result?.rank === 1) rankCounts.first++
+                    else if (result?.rank === 2) rankCounts.second++
+                    else if (result?.rank === 3) rankCounts.third++
+                    else if (result?.rank === 4) rankCounts.fourth++
+                  })
+                  return { ...p, total: getTotalScore(p.id), rankCounts }
+                })
                 .sort((a, b) => b.total - a.total)
                 .map((player, index) => (
                   <div key={player.id} className="flex items-center justify-between p-3 rounded-xl bg-cream-dark">
@@ -319,7 +330,15 @@ export function SessionDetailPage() {
                       }`}>
                         {index + 1}
                       </span>
-                      <span className="font-bold text-gray-800">{player.displayName}</span>
+                      <div>
+                        <span className="font-bold text-gray-800">{player.displayName}</span>
+                        <div className="flex gap-1 mt-0.5">
+                          <span className="text-xs text-yellow-600">{player.rankCounts.first}↑</span>
+                          <span className="text-xs text-gray-400">{player.rankCounts.second}</span>
+                          <span className="text-xs text-orange-400">{player.rankCounts.third}</span>
+                          <span className="text-xs text-blue-400">{player.rankCounts.fourth}↓</span>
+                        </div>
+                      </div>
                     </div>
                     <span className={`font-bold text-xl ${
                       player.total >= 0 ? 'text-green-600' : 'text-red-500'

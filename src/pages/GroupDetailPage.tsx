@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Settings, Users, Trophy, History, Copy, Check, Trash2, UserPlus, X } from 'lucide-react'
+import { ArrowLeft, Settings, Users, Trophy, History, Copy, Check, Trash2, UserPlus, X, ChevronRight } from 'lucide-react'
 import { useGroupDetail } from '../hooks/useGroups'
 import { TabSwitch } from '../components/TabSwitch'
 import { BottomNav } from '../components/BottomNav'
@@ -9,7 +9,7 @@ type Tab = 'ranking' | 'history' | 'members'
 
 export function GroupDetailPage() {
   const { groupId } = useParams<{ groupId: string }>()
-  const { group, members, rules, loading, addGuestMember, removeMember, isAdmin, updateRules } = useGroupDetail(groupId || '')
+  const { group, members, rules, sessions, rankings, loading, addGuestMember, removeMember, isAdmin, updateRules } = useGroupDetail(groupId || '')
   const [activeTab, setActiveTab] = useState<Tab>('ranking')
   const [copied, setCopied] = useState(false)
   const [period, setPeriod] = useState('月間')
@@ -58,8 +58,8 @@ export function GroupDetailPage() {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-3 border-mahjong-table border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-mahjong-table font-medium">読み込み中...</p>
+          <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-primary-dark font-medium">読み込み中...</p>
         </div>
       </div>
     )
@@ -69,11 +69,11 @@ export function GroupDetailPage() {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Users size={32} className="text-gray-400" />
+          <div className="w-16 h-16 bg-cream-dark rounded-full flex items-center justify-center mx-auto mb-3">
+            <Users size={32} className="text-text-secondary/70" />
           </div>
-          <p className="text-gray-500 font-medium">グループが見つかりません</p>
-          <Link to="/" className="text-mahjong-table font-bold mt-3 inline-block hover:underline">
+          <p className="text-text-secondary font-medium">グループが見つかりません</p>
+          <Link to="/" className="text-primary-dark font-bold mt-3 inline-block hover:underline">
             ホームに戻る
           </Link>
         </div>
@@ -90,7 +90,7 @@ export function GroupDetailPage() {
   return (
     <div className="min-h-screen bg-cream pb-24">
       {/* ヘッダー */}
-      <header className="bg-mahjong-table rounded-b-3xl shadow-lg">
+      <header className="bg-primary rounded-b-3xl shadow-lg">
         <div className="max-w-2xl mx-auto px-4 pt-4 pb-6">
           <div className="flex items-center gap-3 mb-4">
             <Link to="/" className="text-white/80 hover:text-white transition-colors">
@@ -135,24 +135,24 @@ export function GroupDetailPage() {
         {rules && (
           <div className="bg-white rounded-2xl shadow-soft p-4 mb-4 animate-slide-up">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-1 h-4 bg-mahjong-table rounded-full"></div>
-              <span className="text-sm font-bold text-gray-700">ルール設定</span>
+              <div className="w-1 h-4 bg-primary rounded-full"></div>
+              <span className="text-sm font-bold text-text-primary">ルール設定</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="bg-mahjong-table text-white px-3 py-1.5 rounded-lg text-sm font-medium">
+              <span className="bg-primary text-white px-3 py-1.5 rounded-lg text-sm font-medium">
                 {rules.game_type}
               </span>
-              <span className="bg-cream-dark text-gray-600 px-3 py-1.5 rounded-lg text-sm">
+              <span className="bg-cream-dark text-text-secondary px-3 py-1.5 rounded-lg text-sm">
                 {rules.start_score.toLocaleString()}点持ち
               </span>
-              <span className="bg-cream-dark text-gray-600 px-3 py-1.5 rounded-lg text-sm">
+              <span className="bg-cream-dark text-text-secondary px-3 py-1.5 rounded-lg text-sm">
                 {rules.return_score.toLocaleString()}点返し
               </span>
-              <span className="bg-cream-dark text-gray-600 px-3 py-1.5 rounded-lg text-sm">
+              <span className="bg-cream-dark text-text-secondary px-3 py-1.5 rounded-lg text-sm">
                 ウマ {Math.abs(rules.uma_second)}-{rules.uma_first}
               </span>
               {rules.has_oka && (
-                <span className="bg-cream-dark text-gray-600 px-3 py-1.5 rounded-lg text-sm">
+                <span className="bg-cream-dark text-text-secondary px-3 py-1.5 rounded-lg text-sm">
                   オカあり
                 </span>
               )}
@@ -175,11 +175,11 @@ export function GroupDetailPage() {
             {activeTab === 'ranking' && (
               <div className="animate-slide-up">
                 <div className="flex items-center justify-between mb-4 pt-2">
-                  <h3 className="font-bold text-gray-700">ランキング</h3>
-                  <select 
+                  <h3 className="font-bold text-text-primary">ランキング</h3>
+                  <select
                     value={period}
                     onChange={(e) => setPeriod(e.target.value)}
-                    className="text-sm border-2 border-gray-200 rounded-lg px-3 py-1.5 font-medium focus:border-mahjong-table focus:outline-none"
+                    className="text-sm border-2 border-gray-200 rounded-lg px-3 py-1.5 font-medium focus:border-primary focus:outline-none"
                   >
                     <option>週間</option>
                     <option>月間</option>
@@ -188,38 +188,105 @@ export function GroupDetailPage() {
                     <option>通算</option>
                   </select>
                 </div>
-                <div className="py-10 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Trophy size={28} className="text-gray-400" />
+                {rankings.every(r => r.gameCount === 0) ? (
+                  <div className="py-10 text-center">
+                    <div className="w-16 h-16 bg-cream-dark rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Trophy size={28} className="text-text-secondary/70" />
+                    </div>
+                    <p className="text-text-secondary">まだ対局記録がありません</p>
+                    <p className="text-text-secondary/70 text-sm mt-1">対局を記録してランキングを確認しましょう</p>
                   </div>
-                  <p className="text-gray-500">まだ対局記録がありません</p>
-                  <p className="text-gray-400 text-sm mt-1">対局を記録してランキングを確認しましょう</p>
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    {rankings.filter(r => r.gameCount > 0).map((ranking, index) => (
+                      <div
+                        key={ranking.memberId}
+                        className="flex items-center justify-between p-3 rounded-xl bg-cream-dark"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
+                            index === 0 ? 'bg-yellow-400 text-white' :
+                            index === 1 ? 'bg-gray-300 text-text-primary' :
+                            index === 2 ? 'bg-orange-400 text-white' : 'bg-cream-dark text-text-secondary'
+                          }`}>
+                            {index + 1}
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-text-primary">{ranking.displayName}</span>
+                              {ranking.isGuest && (
+                                <span className="text-xs bg-gray-200 text-text-secondary px-1.5 py-0.5 rounded">ゲスト</span>
+                              )}
+                            </div>
+                            <div className="flex gap-1 mt-0.5">
+                              <span className="text-xs text-yellow-600">{ranking.rankCounts.first}↑</span>
+                              <span className="text-xs text-text-secondary/70">{ranking.rankCounts.second}</span>
+                              <span className="text-xs text-orange-400">{ranking.rankCounts.third}</span>
+                              <span className="text-xs text-blue-400">{ranking.rankCounts.fourth}↓</span>
+                              <span className="text-xs text-text-secondary/70 ml-1">({ranking.gameCount}半荘)</span>
+                            </div>
+                          </div>
+                        </div>
+                        <span className={`font-bold text-xl ${
+                          ranking.totalScore >= 0 ? 'text-success' : 'text-error'
+                        }`}>
+                          {ranking.totalScore > 0 ? '+' : ''}{ranking.totalScore}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'history' && (
               <div className="animate-slide-up">
-                <h3 className="font-bold text-gray-700 mb-4 pt-2">対局履歴</h3>
-                <div className="py-10 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <History size={28} className="text-gray-400" />
+                <h3 className="font-bold text-text-primary mb-4 pt-2">対局履歴</h3>
+                {sessions.length === 0 ? (
+                  <div className="py-10 text-center">
+                    <div className="w-16 h-16 bg-cream-dark rounded-full flex items-center justify-center mx-auto mb-3">
+                      <History size={28} className="text-text-secondary/70" />
+                    </div>
+                    <p className="text-text-secondary">まだ対局記録がありません</p>
                   </div>
-                  <p className="text-gray-500">まだ対局記録がありません</p>
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    {sessions.map((session) => {
+                      const date = new Date(session.date)
+                      const formatDate = `${date.getMonth() + 1}/${date.getDate()}`
+                      return (
+                        <Link
+                          key={session.id}
+                          to={`/sessions/${session.id}`}
+                          className="flex items-center justify-between p-3 rounded-xl bg-cream-dark hover:bg-cream-dark/80 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-text-secondary w-12 font-medium">
+                              {formatDate}
+                            </span>
+                            <p className="text-sm text-text-secondary">
+                              {session.game_count}半荘
+                            </p>
+                          </div>
+                          <ChevronRight size={18} className="text-text-secondary/70" />
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'members' && (
               <div className="animate-slide-up">
                 <div className="flex items-center justify-between mb-4 pt-2">
-                  <h3 className="font-bold text-gray-700">
+                  <h3 className="font-bold text-text-primary">
                     メンバー ({members.length}人)
                   </h3>
                   {isAdmin && (
                     <button
                       onClick={() => setShowAddGuest(true)}
-                      className="flex items-center gap-1 text-sm font-bold text-mahjong-table hover:text-mahjong-table/80 transition-colors"
+                      className="flex items-center gap-1 text-sm font-bold text-primary-dark hover:text-primary-dark/80 transition-colors"
                     >
                       <UserPlus size={16} />
                       ゲスト追加
@@ -229,15 +296,15 @@ export function GroupDetailPage() {
 
                 {/* ゲスト追加フォーム */}
                 {showAddGuest && (
-                  <div className="bg-mahjong-table/10 rounded-xl p-3 mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">ゲストメンバーを追加</p>
+                  <div className="bg-primary/10 rounded-xl p-3 mb-4">
+                    <p className="text-sm font-medium text-text-primary mb-2">ゲストメンバーを追加</p>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={guestName}
                         onChange={(e) => setGuestName(e.target.value)}
                         placeholder="名前を入力"
-                        className="flex-1 px-3 py-2 rounded-lg bg-white border-2 border-transparent focus:border-mahjong-table transition-colors"
+                        className="flex-1 px-3 py-2 rounded-lg bg-white border-2 border-transparent focus:border-primary transition-colors"
                         autoFocus
                       />
                       <button
@@ -250,7 +317,7 @@ export function GroupDetailPage() {
                           setSaving(false)
                         }}
                         disabled={saving || !guestName.trim()}
-                        className="px-4 py-2 bg-mahjong-table text-white rounded-lg font-bold hover:bg-mahjong-table/90 transition-colors disabled:opacity-50"
+                        className="px-4 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
                       >
                         追加
                       </button>
@@ -259,7 +326,7 @@ export function GroupDetailPage() {
                           setShowAddGuest(false)
                           setGuestName('')
                         }}
-                        className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                        className="px-3 py-2 bg-gray-200 text-text-primary rounded-lg font-medium hover:bg-gray-300 transition-colors"
                       >
                         キャンセル
                       </button>
@@ -275,20 +342,20 @@ export function GroupDetailPage() {
                     >
                       <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-lg ${
                         member.isGuest
-                          ? 'bg-gray-300 text-gray-600'
-                          : 'bg-mahjong-table/20 text-mahjong-table'
+                          ? 'bg-gray-300 text-text-secondary'
+                          : 'bg-primary/20 text-primary-dark'
                       }`}>
                         {member.displayName.charAt(0)}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="font-bold text-gray-800">{member.displayName}</p>
+                          <p className="font-bold text-text-primary">{member.displayName}</p>
                           {member.isGuest && (
-                            <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">ゲスト</span>
+                            <span className="text-xs bg-gray-200 text-text-secondary px-1.5 py-0.5 rounded">ゲスト</span>
                           )}
                         </div>
                         {member.role === 'admin' && (
-                          <span className="text-xs text-mahjong-table font-medium">管理者</span>
+                          <span className="text-xs text-primary-dark font-medium">管理者</span>
                         )}
                       </div>
                       {isAdmin && member.isGuest && (
@@ -322,10 +389,10 @@ export function GroupDetailPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-bold text-gray-800">ルール設定</h2>
+              <h2 className="text-lg font-bold text-text-primary">ルール設定</h2>
               <button
                 onClick={() => setShowRulesModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-2 text-text-secondary/70 hover:text-text-secondary rounded-lg hover:bg-cream-dark transition-colors"
               >
                 <X size={20} />
               </button>
@@ -334,7 +401,7 @@ export function GroupDetailPage() {
             <div className="p-4 space-y-4">
               {/* ゲームタイプ */}
               <div>
-                <label className="text-sm font-medium text-gray-600 mb-2 block">ゲームタイプ</label>
+                <label className="text-sm font-medium text-text-secondary mb-2 block">ゲームタイプ</label>
                 <div className="flex gap-2">
                   {(['東風', '東南'] as const).map(type => (
                     <button
@@ -342,8 +409,8 @@ export function GroupDetailPage() {
                       onClick={() => setEditingRules(prev => ({ ...prev, game_type: type }))}
                       className={`flex-1 py-2 rounded-xl font-bold transition-colors ${
                         editingRules.game_type === type
-                          ? 'bg-mahjong-table text-white'
-                          : 'bg-cream-dark text-gray-600 hover:bg-gray-200'
+                          ? 'bg-primary text-white'
+                          : 'bg-cream-dark text-text-secondary hover:bg-gray-200'
                       }`}
                     >
                       {type}
@@ -354,64 +421,64 @@ export function GroupDetailPage() {
 
               {/* 持ち点 */}
               <div>
-                <label className="text-sm font-medium text-gray-600 mb-2 block">持ち点</label>
+                <label className="text-sm font-medium text-text-secondary mb-2 block">持ち点</label>
                 <input
                   type="number"
                   value={editingRules.start_score}
                   onChange={(e) => setEditingRules(prev => ({ ...prev, start_score: parseInt(e.target.value) || 0 }))}
-                  className="w-full px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                  className="w-full px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors"
                 />
               </div>
 
               {/* 返し点 */}
               <div>
-                <label className="text-sm font-medium text-gray-600 mb-2 block">返し点</label>
+                <label className="text-sm font-medium text-text-secondary mb-2 block">返し点</label>
                 <input
                   type="number"
                   value={editingRules.return_score}
                   onChange={(e) => setEditingRules(prev => ({ ...prev, return_score: parseInt(e.target.value) || 0 }))}
-                  className="w-full px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                  className="w-full px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors"
                 />
               </div>
 
               {/* ウマ */}
               <div>
-                <label className="text-sm font-medium text-gray-600 mb-2 block">ウマ</label>
+                <label className="text-sm font-medium text-text-secondary mb-2 block">ウマ</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <span className="text-xs text-gray-500">1着</span>
+                    <span className="text-xs text-text-secondary">1着</span>
                     <input
                       type="number"
                       value={editingRules.uma_first}
                       onChange={(e) => setEditingRules(prev => ({ ...prev, uma_first: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                      className="w-full px-3 py-2 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors"
                     />
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500">2着</span>
+                    <span className="text-xs text-text-secondary">2着</span>
                     <input
                       type="number"
                       value={editingRules.uma_second}
                       onChange={(e) => setEditingRules(prev => ({ ...prev, uma_second: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                      className="w-full px-3 py-2 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors"
                     />
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500">3着</span>
+                    <span className="text-xs text-text-secondary">3着</span>
                     <input
                       type="number"
                       value={editingRules.uma_third}
                       onChange={(e) => setEditingRules(prev => ({ ...prev, uma_third: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                      className="w-full px-3 py-2 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors"
                     />
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500">4着</span>
+                    <span className="text-xs text-text-secondary">4着</span>
                     <input
                       type="number"
                       value={editingRules.uma_fourth}
                       onChange={(e) => setEditingRules(prev => ({ ...prev, uma_fourth: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                      className="w-full px-3 py-2 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors"
                     />
                   </div>
                 </div>
@@ -419,11 +486,11 @@ export function GroupDetailPage() {
 
               {/* オカ */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-600">オカあり</label>
+                <label className="text-sm font-medium text-text-secondary">オカあり</label>
                 <button
                   onClick={() => setEditingRules(prev => ({ ...prev, has_oka: !prev.has_oka }))}
                   className={`w-14 h-8 rounded-full transition-colors ${
-                    editingRules.has_oka ? 'bg-mahjong-table' : 'bg-gray-300'
+                    editingRules.has_oka ? 'bg-primary' : 'bg-gray-300'
                   }`}
                 >
                   <div className={`w-6 h-6 bg-white rounded-full shadow transition-transform ${
@@ -436,7 +503,7 @@ export function GroupDetailPage() {
             <div className="p-4 border-t flex gap-2">
               <button
                 onClick={() => setShowRulesModal(false)}
-                className="flex-1 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-colors"
+                className="flex-1 py-3 rounded-xl bg-gray-200 text-text-primary font-bold hover:bg-gray-300 transition-colors"
               >
                 キャンセル
               </button>
@@ -448,7 +515,7 @@ export function GroupDetailPage() {
                   setShowRulesModal(false)
                 }}
                 disabled={saving}
-                className="flex-1 py-3 rounded-xl bg-mahjong-table text-white font-bold hover:bg-mahjong-table/90 transition-colors disabled:opacity-50"
+                className="flex-1 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
                 {saving ? '保存中...' : '保存'}
               </button>

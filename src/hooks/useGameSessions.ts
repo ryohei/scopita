@@ -10,6 +10,12 @@ interface GameSession {
   group_name: string | null
   total_score: number
   game_count: number
+  rank_counts: {
+    first: number
+    second: number
+    third: number
+    fourth: number
+  }
 }
 
 interface UseGameSessionsOptions {
@@ -73,12 +79,13 @@ export function useGameSessions(options: UseGameSessionsOptions = {}) {
 
           let totalScore = 0
           let gameCount = 0
+          const rankCounts = { first: 0, second: 0, third: 0, fourth: 0 }
 
           if (playerData) {
             // 結果を集計
             const { data: results, error: resultsError } = await supabase
               .from('game_results')
-              .select('score, game_id')
+              .select('score, rank, game_id')
               .eq('player_id', playerData.id)
 
             console.log('Results for player', playerData.id, ':', results, resultsError)
@@ -86,6 +93,13 @@ export function useGameSessions(options: UseGameSessionsOptions = {}) {
             if (results) {
               totalScore = results.reduce((sum, r) => sum + r.score, 0)
               gameCount = results.length
+              // 順位カウント
+              results.forEach(r => {
+                if (r.rank === 1) rankCounts.first++
+                else if (r.rank === 2) rankCounts.second++
+                else if (r.rank === 3) rankCounts.third++
+                else if (r.rank === 4) rankCounts.fourth++
+              })
             }
           }
 
@@ -97,6 +111,7 @@ export function useGameSessions(options: UseGameSessionsOptions = {}) {
             group_name: (session.groups as any)?.name || null,
             total_score: totalScore,
             game_count: gameCount,
+            rank_counts: rankCounts,
           }
         })
       )

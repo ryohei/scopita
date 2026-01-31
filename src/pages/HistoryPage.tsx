@@ -71,7 +71,7 @@ export function HistoryPage() {
           <>
             {/* サマリー */}
             <div className="bg-white rounded-2xl shadow-soft p-4 mb-4 animate-slide-up">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4 mb-3">
                 <div className="text-center">
                   <p className="text-gray-500 text-xs mb-1">総日数</p>
                   <p className="text-2xl font-bold text-gray-800">{sessions.length}</p>
@@ -91,6 +91,33 @@ export function HistoryPage() {
                   }`}>
                     {sessions.reduce((sum, s) => sum + s.total_score, 0) > 0 ? '+' : ''}
                     {sessions.reduce((sum, s) => sum + s.total_score, 0)}
+                  </p>
+                </div>
+              </div>
+              {/* 順位分布 */}
+              <div className="grid grid-cols-4 gap-2">
+                <div className="bg-yellow-50 rounded-lg p-2 text-center">
+                  <p className="text-yellow-600 text-xs">1着</p>
+                  <p className="text-lg font-bold text-yellow-600">
+                    {sessions.reduce((sum, s) => sum + s.rank_counts.first, 0)}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2 text-center">
+                  <p className="text-gray-500 text-xs">2着</p>
+                  <p className="text-lg font-bold text-gray-600">
+                    {sessions.reduce((sum, s) => sum + s.rank_counts.second, 0)}
+                  </p>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-2 text-center">
+                  <p className="text-orange-500 text-xs">3着</p>
+                  <p className="text-lg font-bold text-orange-500">
+                    {sessions.reduce((sum, s) => sum + s.rank_counts.third, 0)}
+                  </p>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-2 text-center">
+                  <p className="text-blue-500 text-xs">4着</p>
+                  <p className="text-lg font-bold text-blue-500">
+                    {sessions.reduce((sum, s) => sum + s.rank_counts.fourth, 0)}
                   </p>
                 </div>
               </div>

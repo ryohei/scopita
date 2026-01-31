@@ -45,14 +45,14 @@ export function SignUpPage() {
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       {/* ヘッダー */}
-      <header className="bg-mahjong-table rounded-b-3xl shadow-lg px-4 pt-6 pb-8">
+      <header className="bg-primary rounded-b-3xl shadow-lg px-4 pt-6 pb-8">
         <div className="max-w-md mx-auto">
           {/* キャラクター（コンパクト） */}
           <div className="flex justify-center mb-3">
             <div className="w-20 h-20 rounded-full bg-white/90 p-1 shadow-lg animate-float">
               <img 
                 src="/images/mascot-256.png" 
-                alt="スコピタくん" 
+                alt="スコピタちゃん" 
                 className="w-full h-full object-cover rounded-full"
               />
             </div>
@@ -60,7 +60,7 @@ export function SignUpPage() {
 
           {/* タイトル */}
           <div className="text-center text-white">
-            <h1 className="text-2xl font-bold mb-1">スコピタくん</h1>
+            <h1 className="text-2xl font-bold mb-1">スコピタちゃん</h1>
             <p className="text-sm opacity-90">新規登録</p>
           </div>
         </div>
@@ -77,7 +77,7 @@ export function SignUpPage() {
             )}
 
             <div>
-              <label htmlFor="displayName" className="block text-sm font-bold text-gray-700 mb-2">
+              <label htmlFor="displayName" className="block text-sm font-bold text-text-primary mb-2">
                 表示名
               </label>
               <input
@@ -86,14 +86,14 @@ export function SignUpPage() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
-                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors text-text-primary"
                 placeholder="ニックネーム"
               />
-              <p className="text-xs text-gray-500 mt-1.5">他のユーザーに表示される名前です</p>
+              <p className="text-xs text-text-secondary mt-1.5">他のユーザーに表示される名前です</p>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-bold text-text-primary mb-2">
                 メールアドレス
               </label>
               <input
@@ -102,13 +102,13 @@ export function SignUpPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors text-text-primary"
                 placeholder="example@email.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-bold text-text-primary mb-2">
                 パスワード
               </label>
               <input
@@ -117,16 +117,16 @@ export function SignUpPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-mahjong-table focus:bg-white transition-colors"
+                className="w-full px-4 py-3.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors text-text-primary"
                 placeholder="••••••••"
               />
-              <p className="text-xs text-gray-500 mt-1.5">6文字以上</p>
+              <p className="text-xs text-text-secondary mt-1.5">6文字以上</p>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-mahjong-table text-white py-4 rounded-2xl font-bold btn-pressable flex items-center justify-center gap-2 disabled:opacity-50 shadow-button text-lg mt-6"
+              className="w-full bg-primary text-white py-4 rounded-2xl font-bold btn-pressable flex items-center justify-center gap-2 disabled:opacity-50 shadow-button text-lg mt-6"
             >
               <UserPlus size={22} />
               {loading ? '登録中...' : '登録する'}
@@ -134,9 +134,9 @@ export function SignUpPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-text-secondary">
               アカウントをお持ちの方は
-              <Link to="/login" className="text-mahjong-table font-bold ml-1 hover:underline">
+              <Link to="/login" className="text-primary-dark font-bold ml-1 hover:underline">
                 ログイン
               </Link>
             </p>
@@ -150,19 +150,19 @@ export function SignUpPage() {
           rel="noopener noreferrer"
           className="mt-6 bg-white rounded-2xl shadow-soft p-4 flex items-center gap-3 card-interactive block"
         >
-          <div className="w-12 h-12 bg-mahjong-table/10 rounded-xl flex items-center justify-center">
-            <Calculator size={24} className="text-mahjong-table" />
+          <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+            <Calculator size={24} className="text-primary-dark" />
           </div>
           <div className="flex-1">
-            <p className="font-bold text-mahjong-table">テンピタくん</p>
-            <p className="text-sm text-gray-500">符計算・点数計算はこちら →</p>
+            <p className="font-bold text-primary-dark">テンピタくん</p>
+            <p className="text-sm text-text-secondary">符計算・点数計算はこちら →</p>
           </div>
         </a>
       </main>
 
       {/* フッター */}
       <footer className="py-6 text-center text-gray-400 text-sm">
-        <p>© 2025 スコピタくん</p>
+        <p>© 2025 スコピタちゃん</p>
       </footer>
     </div>
   )
