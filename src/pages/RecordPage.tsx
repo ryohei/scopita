@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase'
 import { SectionCard } from '../components/SectionCard'
 import { TabSwitch } from '../components/TabSwitch'
 import { YAKUMAN_TYPES } from '../constants/mahjong'
-import { calculateScore, DEFAULT_RULES, type Rules } from '../utils/scoreCalculator'
+import { calculateAllScores, DEFAULT_RULES, type Rules } from '../utils/scoreCalculator'
 
 interface Player {
   id: string
@@ -210,13 +210,23 @@ export function RecordPage() {
       // 全員のスコアが入力されたら順位と計算後スコアを算出
       const allFilled = newScores.every(s => s.rawScore !== '')
       if (allFilled) {
+        // 順位を先に計算
         const sorted = [...newScores].sort((a, b) =>
           parseInt(b.rawScore) - parseInt(a.rawScore)
         )
         newScores.forEach(s => {
           const rank = sorted.findIndex(ss => ss.playerId === s.playerId) + 1
           s.rank = rank
-          s.score = calculateScore(parseInt(s.rawScore), rank, rules)
+        })
+
+        // 全員分のスコアを一括計算（合計が0になるように1位を調整）
+        const results = newScores.map(s => ({
+          rawScore: parseInt(s.rawScore),
+          rank: s.rank!
+        }))
+        const calculatedScores = calculateAllScores(results, rules)
+        newScores.forEach((s, i) => {
+          s.score = calculatedScores[i]
         })
       }
 

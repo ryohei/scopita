@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
-import { calculateScore, DEFAULT_RULES, type Rules } from '../utils/scoreCalculator'
+import { calculateAllScores, DEFAULT_RULES, type Rules } from '../utils/scoreCalculator'
 
 export interface SessionPlayer {
   id: string
@@ -320,12 +320,21 @@ export function useSessionDetail(sessionId: string | undefined) {
       const allFilled = updatedResults.every(r => r.rawScore !== 0)
 
       if (allFilled) {
-        // 順位を計算
+        // 順位を先に計算
         const sorted = [...updatedResults].sort((a, b) => b.rawScore - a.rawScore)
         updatedResults.forEach(r => {
           const rank = sorted.findIndex(s => s.playerId === r.playerId) + 1
           r.rank = rank
-          r.score = calculateScore(r.rawScore, rank, session.rules)
+        })
+
+        // 全員分のスコアを一括計算（合計が0になるように1位を調整）
+        const results = updatedResults.map(r => ({
+          rawScore: r.rawScore,
+          rank: r.rank
+        }))
+        const calculatedScores = calculateAllScores(results, session.rules)
+        updatedResults.forEach((r, i) => {
+          r.score = calculatedScores[i]
         })
       }
 
