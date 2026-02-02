@@ -358,10 +358,10 @@ export function GroupDetailPage() {
                           <span className="text-xs text-primary-dark font-medium">管理者</span>
                         )}
                       </div>
-                      {isAdmin && member.isGuest && (
+                      {isAdmin && member.role !== 'admin' && (
                         <button
                           onClick={async () => {
-                            if (!confirm(`${member.displayName}を削除しますか？`)) return
+                            if (!confirm(`${member.displayName}をグループから除外しますか？`)) return
                             setSaving(true)
                             await removeMember(member.id)
                             setSaving(false)
