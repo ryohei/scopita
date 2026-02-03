@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Settings, Users, Trophy, History, Copy, Check, Trash2, UserPlus, X, ChevronRight } from 'lucide-react'
 import { useGroupDetail } from '../hooks/useGroups'
 import { TabSwitch } from '../components/TabSwitch'
@@ -9,7 +9,8 @@ type Tab = 'ranking' | 'history' | 'members'
 
 export function GroupDetailPage() {
   const { groupId } = useParams<{ groupId: string }>()
-  const { group, members, rules, sessions, rankings, loading, addGuestMember, removeMember, isAdmin, updateRules } = useGroupDetail(groupId || '')
+  const navigate = useNavigate()
+  const { group, members, rules, sessions, rankings, loading, addGuestMember, removeMember, deleteGroup, isAdmin, updateRules } = useGroupDetail(groupId || '')
   const [activeTab, setActiveTab] = useState<Tab>('ranking')
   const [copied, setCopied] = useState(false)
   const [period, setPeriod] = useState('月間')
@@ -518,6 +519,28 @@ export function GroupDetailPage() {
                 className="flex-1 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
                 {saving ? '保存中...' : '保存'}
+              </button>
+            </div>
+
+            {/* グループ削除 */}
+            <div className="p-4 border-t">
+              <button
+                onClick={async () => {
+                  if (!confirm('本当にこのグループを削除しますか？\n全ての対局履歴も削除されます。この操作は取り消せません。')) return
+                  setSaving(true)
+                  const { error } = await deleteGroup()
+                  setSaving(false)
+                  if (!error) {
+                    navigate('/')
+                  } else {
+                    alert('グループの削除に失敗しました')
+                  }
+                }}
+                disabled={saving}
+                className="w-full py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Trash2 size={18} />
+                グループを削除
               </button>
             </div>
           </div>

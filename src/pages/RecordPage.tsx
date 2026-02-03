@@ -34,6 +34,7 @@ interface GameScore {
 
 interface Game {
   id: string
+  selectedPlayers: Player[] // この半荘でプレイする4人
   scores: GameScore[]
   yakuman: { playerId: string; type: string }[]
 }
@@ -59,6 +60,10 @@ export function RecordPage() {
   const [games, setGames] = useState<Game[]>([])
   const [saving, setSaving] = useState(false)
   const [showRules, setShowRules] = useState(false)
+  const [showPlayerSelect, setShowPlayerSelect] = useState(false)
+  const [tempSelectedPlayers, setTempSelectedPlayers] = useState<string[]>([]) // 選択中のmemberIdまたはplayerId
+  const [showFreePlayerEdit, setShowFreePlayerEdit] = useState(false)
+  const [tempFreePlayerNames, setTempFreePlayerNames] = useState<string[]>(['', '', '', '']) // 単発モード用の名前入力
 
   // ルール設定（デフォルト）
   const [rules, setRules] = useState<Rules>(DEFAULT_RULES)
@@ -185,10 +190,13 @@ export function RecordPage() {
     }
   }, [selectedGroupId, user, myName])
 
-  const addGame = () => {
+  const addGame = (selectedPlayers?: Player[]) => {
+    // 選択されたプレイヤー、または現在のプレイヤーを使用
+    const gamePlayers = selectedPlayers || players
     const newGame: Game = {
       id: Date.now().toString(),
-      scores: players.map((p) => ({
+      selectedPlayers: [...gamePlayers],
+      scores: gamePlayers.map((p) => ({
         playerId: p.id,
         rawScore: '',
         rank: 0,
@@ -196,11 +204,11 @@ export function RecordPage() {
       })),
       yakuman: [],
     }
-    setGames([...games, newGame])
+    setGames(prevGames => [...prevGames, newGame])
   }
 
   const updateRawScore = (gameId: string, playerId: string, rawScore: string) => {
-    setGames(games.map(game => {
+    setGames(prevGames => prevGames.map(game => {
       if (game.id !== gameId) return game
 
       const newScores = game.scores.map(s =>
@@ -235,11 +243,11 @@ export function RecordPage() {
   }
 
   const removeGame = (gameId: string) => {
-    setGames(games.filter(g => g.id !== gameId))
+    setGames(prevGames => prevGames.filter(g => g.id !== gameId))
   }
 
   const addYakuman = (gameId: string, playerId: string, type: string) => {
-    setGames(games.map(game => {
+    setGames(prevGames => prevGames.map(game => {
       if (game.id !== gameId) return game
       return {
         ...game,
@@ -249,7 +257,7 @@ export function RecordPage() {
   }
 
   const removeYakuman = (gameId: string, index: number) => {
-    setGames(games.map(game => {
+    setGames(prevGames => prevGames.map(game => {
       if (game.id !== gameId) return game
       return {
         ...game,
@@ -258,16 +266,48 @@ export function RecordPage() {
     }))
   }
 
-  const getTotalScore = (playerId: string): number => {
+  const getTotalScore = (playerId: string, memberIdOrName?: string): number => {
     return games.reduce((sum, game) => {
-      const score = game.scores.find(s => s.playerId === playerId)
+      const gamePlayers = game.selectedPlayers || players
+      // グループ: memberIdで検索、単発: 名前で検索
+      const player = memberIdOrName
+        ? gamePlayers.find(p => p.memberId === memberIdOrName || p.name === memberIdOrName)
+        : gamePlayers.find(p => p.id === playerId)
+      if (!player) return sum
+      const score = game.scores.find(s => s.playerId === player.id)
       return sum + (score?.score || 0)
     }, 0)
   }
 
+  // 全半荘に参加したユニークなプレイヤーを取得
+  const getAllParticipants = (): Player[] => {
+    const participantMap = new Map<string, Player>()
+
+    games.forEach(game => {
+      const gamePlayers = game.selectedPlayers || players
+      gamePlayers.forEach(p => {
+        // グループモード: memberIdをキー
+        // 単発モード: 名前をキー（同じ名前は同一人物）
+        const key = p.memberId || p.name
+        if (!participantMap.has(key)) {
+          participantMap.set(key, p)
+        }
+      })
+    })
+
+    // ゲームがない場合は現在のplayers
+    if (participantMap.size === 0) {
+      return players
+    }
+
+    return Array.from(participantMap.values())
+  }
+
   const handleSave = async () => {
     if (!user) return
-    if (players.some(p => !p.name.trim())) {
+    // 全半荘の参加プレイヤーの名前をチェック
+    const allParticipants = getAllParticipants()
+    if (allParticipants.some(p => !p.name.trim())) {
       alert('全員の名前を入力してください')
       return
     }
@@ -296,11 +336,11 @@ export function RecordPage() {
 
       if (sessionError) throw sessionError
 
-      // プレイヤー登録
+      // 全参加プレイヤーを登録
       const { data: sessionPlayers, error: playersError } = await supabase
         .from('session_players')
         .insert(
-          players.map((p, index) => ({
+          allParticipants.map((p, index) => ({
             session_id: session.id,
             user_id: p.userId || null,
             guest_name: p.isGuest ? p.name : null,
@@ -311,15 +351,17 @@ export function RecordPage() {
 
       if (playersError) throw playersError
 
-      // プレイヤーIDマッピング
+      // プレイヤーIDマッピング（グループ: memberId、単発: 名前をキーに）
       const playerIdMap = new Map<string, string>()
-      players.forEach((p, index) => {
-        playerIdMap.set(p.id, sessionPlayers[index].id)
+      allParticipants.forEach((p, index) => {
+        const key = p.memberId || p.name
+        playerIdMap.set(key, sessionPlayers[index].id)
       })
 
       // 各半荘を保存
       for (let i = 0; i < games.length; i++) {
         const game = games[i]
+        const gamePlayers = game.selectedPlayers || players
 
         const { data: gameData, error: gameError } = await supabase
           .from('games')
@@ -332,17 +374,22 @@ export function RecordPage() {
 
         if (gameError) throw gameError
 
-        // 結果を保存
+        // 結果を保存（この半荘の4人のみ）
         const { error: resultsError } = await supabase
           .from('game_results')
           .insert(
-            game.scores.map(s => ({
-              game_id: gameData.id,
-              player_id: playerIdMap.get(s.playerId),
-              rank: s.rank,
-              raw_score: parseInt(s.rawScore),
-              score: s.score,
-            }))
+            game.scores.map(s => {
+              const gamePlayer = gamePlayers.find(p => p.id === s.playerId)
+              // グループ: memberId、単発: 名前をキーに
+              const key = gamePlayer?.memberId || gamePlayer?.name || ''
+              return {
+                game_id: gameData.id,
+                player_id: playerIdMap.get(key),
+                rank: s.rank,
+                raw_score: parseInt(s.rawScore),
+                score: s.score,
+              }
+            })
           )
 
         if (resultsError) throw resultsError
@@ -352,11 +399,16 @@ export function RecordPage() {
           const { error: yakumanError } = await supabase
             .from('yakuman')
             .insert(
-              game.yakuman.map(y => ({
-                game_id: gameData.id,
-                player_id: playerIdMap.get(y.playerId),
-                type: y.type,
-              }))
+              game.yakuman.map(y => {
+                const gamePlayer = gamePlayers.find(p => p.id === y.playerId)
+                // グループ: memberId、単発: 名前をキーに
+                const key = gamePlayer?.memberId || gamePlayer?.name || ''
+                return {
+                  game_id: gameData.id,
+                  player_id: playerIdMap.get(key),
+                  type: y.type,
+                }
+              })
             )
 
           if (yakumanError) throw yakumanError
@@ -573,7 +625,8 @@ export function RecordPage() {
           </div>
         </SectionCard>
 
-        {/* プレイヤー入力 */}
+        {/* プレイヤー入力（グループモードのみ表示） */}
+        {mode === 'group' && (
         <SectionCard title="参加者" icon={<Users size={16} />} className="mb-4">
           <div className="space-y-2">
             {players.map((player, index) => (
@@ -645,7 +698,7 @@ export function RecordPage() {
                     </div>
                   )
                 ) : (
-                  // 単発モード: テキスト入力
+                  // グループ未選択時: テキスト入力
                   <input
                     type="text"
                     value={player.name}
@@ -663,6 +716,7 @@ export function RecordPage() {
             ))}
           </div>
         </SectionCard>
+        )}
 
         {/* 半荘入力 */}
         {games.map((game, gameIndex) => (
@@ -682,12 +736,12 @@ export function RecordPage() {
             </div>
 
             <div className="space-y-2 mb-4">
-              {players.map((player) => {
+              {(game.selectedPlayers || players).map((player, playerIndex) => {
                 const scoreData = game.scores.find(s => s.playerId === player.id)
                 return (
                   <div key={player.id} className="flex items-center gap-2">
                     <span className="w-20 text-sm font-medium text-text-primary truncate">
-                      {player.name || `P${players.indexOf(player) + 1}`}
+                      {player.name || `P${playerIndex + 1}`}
                     </span>
                     <div className="flex-1 relative">
                       <input
@@ -724,7 +778,7 @@ export function RecordPage() {
                 <div key={index} className="flex items-center gap-2 mb-2 bg-yellow-50 p-2 rounded-lg">
                   <Trophy size={14} className="text-yellow-500" />
                   <span className="text-sm font-medium flex-1">
-                    {players.find(p => p.id === y.playerId)?.name}: {y.type}
+                    {(game.selectedPlayers || players).find(p => p.id === y.playerId)?.name}: {y.type}
                   </span>
                   <button
                     onClick={() => removeYakuman(game.id, index)}
@@ -736,8 +790,8 @@ export function RecordPage() {
               ))}
               <div className="flex gap-2">
                 <select className="flex-1 px-3 py-2 rounded-xl bg-cream-dark text-sm font-medium" id={`yakuman-player-${game.id}`}>
-                  {players.map(p => (
-                    <option key={p.id} value={p.id}>{p.name || `P${players.indexOf(p) + 1}`}</option>
+                  {(game.selectedPlayers || players).map((p, i) => (
+                    <option key={p.id} value={p.id}>{p.name || `P${i + 1}`}</option>
                   ))}
                 </select>
                 <select className="flex-1 px-3 py-2 rounded-xl bg-cream-dark text-sm font-medium" id={`yakuman-type-${game.id}`}>
@@ -761,7 +815,31 @@ export function RecordPage() {
         ))}
 
         <button
-          onClick={addGame}
+          onClick={() => {
+            if (mode === 'group') {
+              // グループモードで5人以上いる場合はプレイヤー選択モーダルを表示
+              if (groupMembers.length > 4) {
+                const lastGame = games[games.length - 1]
+                if (lastGame) {
+                  setTempSelectedPlayers(lastGame.selectedPlayers.map(p => p.memberId || p.id))
+                } else {
+                  setTempSelectedPlayers(players.filter(p => p.memberId).map(p => p.memberId!))
+                }
+                setShowPlayerSelect(true)
+              } else {
+                addGame()
+              }
+            } else {
+              // 単発モード: 名前編集モーダルを表示
+              const lastGame = games[games.length - 1]
+              if (lastGame) {
+                setTempFreePlayerNames(lastGame.selectedPlayers.map(p => p.name))
+              } else {
+                setTempFreePlayerNames(players.map(p => p.name))
+              }
+              setShowFreePlayerEdit(true)
+            }
+          }}
           className="w-full border-2 border-dashed border-primary/30 text-primary-dark py-4 rounded-2xl font-bold hover:border-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-2 mb-4"
         >
           <Plus size={22} />
@@ -772,11 +850,11 @@ export function RecordPage() {
         {games.length > 0 && (
           <SectionCard title="本日の集計" icon={<Trophy size={16} />} className="mb-4">
             <div className="space-y-2">
-              {players
-                .map(p => ({ ...p, total: getTotalScore(p.id) }))
+              {getAllParticipants()
+                .map(p => ({ ...p, total: getTotalScore(p.id, p.memberId || p.name) }))
                 .sort((a, b) => b.total - a.total)
                 .map((player, index) => (
-                  <div key={player.id} className="flex items-center justify-between p-3 rounded-xl bg-cream-dark">
+                  <div key={player.memberId || player.id} className="flex items-center justify-between p-3 rounded-xl bg-cream-dark">
                     <div className="flex items-center gap-3">
                       <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                         index === 0 ? 'bg-yellow-400 text-white' :
@@ -785,7 +863,7 @@ export function RecordPage() {
                       }`}>
                         {index + 1}
                       </span>
-                      <span className="font-bold text-text-primary">{player.name || `P${players.indexOf(player) + 1}`}</span>
+                      <span className="font-bold text-text-primary">{player.name}</span>
                     </div>
                     <span className={`font-bold text-xl ${
                       player.total >= 0 ? 'text-success' : 'text-error'
@@ -828,6 +906,152 @@ export function RecordPage() {
           </button>
         </div>
       </div>
+
+      {/* プレイヤー選択モーダル（5人以上の場合） */}
+      {showPlayerSelect && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
+              <h2 className="text-lg font-bold text-text-primary">この半荘のプレイヤー</h2>
+              <button
+                onClick={() => setShowPlayerSelect(false)}
+                className="p-2 text-text-secondary/70 hover:text-text-secondary rounded-lg hover:bg-cream-dark transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4">
+              <p className="text-sm text-text-secondary mb-3">4人を選択してください</p>
+              <div className="space-y-2">
+                {groupMembers.map(member => {
+                  const isSelected = tempSelectedPlayers.includes(member.id)
+                  return (
+                    <button
+                      key={member.id}
+                      onClick={() => {
+                        if (isSelected) {
+                          setTempSelectedPlayers(prev => prev.filter(id => id !== member.id))
+                        } else if (tempSelectedPlayers.length < 4) {
+                          setTempSelectedPlayers(prev => [...prev, member.id])
+                        }
+                      }}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                        isSelected
+                          ? 'bg-primary/20 border-2 border-primary'
+                          : 'bg-cream-dark border-2 border-transparent hover:border-primary/30'
+                      } ${tempSelectedPlayers.length >= 4 && !isSelected ? 'opacity-50' : ''}`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                        isSelected ? 'bg-primary text-white' : 'bg-gray-300 text-text-secondary'
+                      }`}>
+                        {member.displayName.charAt(0)}
+                      </div>
+                      <span className="font-medium text-text-primary">{member.displayName}</span>
+                      {member.isGuest && (
+                        <span className="text-xs bg-gray-200 text-text-secondary px-1.5 py-0.5 rounded">ゲスト</span>
+                      )}
+                      {isSelected && (
+                        <span className="ml-auto text-primary font-bold">✓</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="p-4 border-t sticky bottom-0 bg-white">
+              <button
+                onClick={() => {
+                  if (tempSelectedPlayers.length !== 4) {
+                    alert('4人を選択してください')
+                    return
+                  }
+                  // 選択されたメンバーからPlayerを作成
+                  const selectedPlayersData: Player[] = tempSelectedPlayers.map((memberId, index) => {
+                    const member = groupMembers.find(m => m.id === memberId)!
+                    return {
+                      id: String(index + 1),
+                      name: member.displayName,
+                      isGuest: member.isGuest,
+                      userId: member.user_id || undefined,
+                      memberId: member.id,
+                    }
+                  })
+                  addGame(selectedPlayersData)
+                  setShowPlayerSelect(false)
+                }}
+                disabled={tempSelectedPlayers.length !== 4}
+                className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                半荘を追加（{tempSelectedPlayers.length}/4人選択中）
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 単発モード用プレイヤー名編集モーダル */}
+      {showFreePlayerEdit && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-bold text-text-primary">この半荘のプレイヤー</h2>
+              <button
+                onClick={() => setShowFreePlayerEdit(false)}
+                className="p-2 text-text-secondary/70 hover:text-text-secondary rounded-lg hover:bg-cream-dark transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {tempFreePlayerNames.map((name, index) => (
+                <div key={index} className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary-dark font-bold">
+                    {index + 1}
+                  </span>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      const newNames = [...tempFreePlayerNames]
+                      newNames[index] = e.target.value
+                      setTempFreePlayerNames(newNames)
+                    }}
+                    placeholder={`プレイヤー${index + 1}`}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 border-t">
+              <button
+                onClick={() => {
+                  if (tempFreePlayerNames.some(n => !n.trim())) {
+                    alert('全員の名前を入力してください')
+                    return
+                  }
+                  // 入力された名前からPlayerを作成（ユニークなIDを生成）
+                  const timestamp = Date.now()
+                  const selectedPlayersData: Player[] = tempFreePlayerNames.map((name, index) => ({
+                    id: `${timestamp}-${index}`,
+                    name: name.trim(),
+                    isGuest: index !== 0 || !user, // プレイヤー1は自分（ログインユーザー）
+                    userId: index === 0 ? user?.id : undefined,
+                  }))
+                  addGame(selectedPlayersData)
+                  setShowFreePlayerEdit(false)
+                }}
+                className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-colors"
+              >
+                半荘を追加
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

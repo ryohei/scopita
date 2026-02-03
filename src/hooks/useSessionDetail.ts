@@ -117,10 +117,16 @@ export function useSessionDetail(sessionId: string | undefined) {
 
       let userNames: Record<string, string> = {}
       if (userIds.length > 0) {
-        // auth.usersにはアクセスできないので、user_metadataから取得する必要がある
-        // ここでは、自分のユーザー情報のみセット
-        if (user.user_metadata?.display_name) {
-          userNames[user.id] = user.user_metadata.display_name
+        // usersテーブルから名前を取得
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, display_name')
+          .in('id', userIds)
+
+        if (usersData) {
+          usersData.forEach(u => {
+            userNames[u.id] = u.display_name
+          })
         }
       }
 
@@ -198,7 +204,9 @@ export function useSessionDetail(sessionId: string | undefined) {
   }, [fetchSession])
 
   // 半荘を追加
-  const addGame = async (): Promise<{ error: Error | null }> => {
+  // playerIds: グループ対局で参加するプレイヤーIDのリスト
+  // playerNames: 単発対局で参加するプレイヤー名のリスト（新規プレイヤーは自動追加）
+  const addGame = async (playerIds?: string[], playerNames?: string[]): Promise<{ error: Error | null }> => {
     if (!session) return { error: new Error('Session not found') }
 
     try {
@@ -224,8 +232,50 @@ export function useSessionDetail(sessionId: string | undefined) {
 
       if (gameError) throw gameError
 
+      let targetPlayers: SessionPlayer[] = []
+      let newPlayersAdded: SessionPlayer[] = []
+
+      if (playerNames) {
+        // 単発対局: 名前でプレイヤーを特定、新規は追加
+        for (const name of playerNames) {
+          const existingPlayer = session.players.find(p => p.displayName === name)
+          if (existingPlayer) {
+            targetPlayers.push(existingPlayer)
+          } else {
+            // 新しいプレイヤーをsession_playersに追加
+            const { data: newPlayerData, error: newPlayerError } = await supabase
+              .from('session_players')
+              .insert({
+                session_id: session.id,
+                guest_name: name,
+                player_index: session.players.length + newPlayersAdded.length,
+              })
+              .select()
+              .single()
+
+            if (newPlayerError) throw newPlayerError
+
+            const newPlayer: SessionPlayer = {
+              id: newPlayerData.id,
+              userId: null,
+              guestName: name,
+              playerIndex: newPlayerData.player_index,
+              displayName: name,
+            }
+            targetPlayers.push(newPlayer)
+            newPlayersAdded.push(newPlayer)
+          }
+        }
+      } else if (playerIds) {
+        // グループ対局: IDでプレイヤーを特定
+        targetPlayers = session.players.filter(p => playerIds.includes(p.id))
+      } else {
+        // デフォルト: 全プレイヤー
+        targetPlayers = session.players
+      }
+
       // 各プレイヤーの初期結果を作成
-      const initialResults = session.players.map(p => ({
+      const initialResults = targetPlayers.map(p => ({
         game_id: gameData.id,
         player_id: p.id,
         rank: 0,
@@ -245,6 +295,7 @@ export function useSessionDetail(sessionId: string | undefined) {
         if (!prev) return prev
         return {
           ...prev,
+          players: [...prev.players, ...newPlayersAdded],
           games: [
             ...prev.games,
             {

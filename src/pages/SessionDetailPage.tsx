@@ -25,6 +25,10 @@ export function SessionDetailPage() {
 
   const [editingScores, setEditingScores] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [showPlayerSelect, setShowPlayerSelect] = useState(false)
+  const [tempSelectedPlayers, setTempSelectedPlayers] = useState<string[]>([])
+  const [showFreePlayerEdit, setShowFreePlayerEdit] = useState(false)
+  const [tempFreePlayerNames, setTempFreePlayerNames] = useState<string[]>(['', '', '', ''])
 
   if (loading) {
     return (
@@ -91,10 +95,24 @@ export function SessionDetailPage() {
     })
   }
 
-  const handleAddGame = async () => {
+  const handleAddGame = async (playerIds?: string[], playerNames?: string[]) => {
     setSaving(true)
-    await addGame()
+    await addGame(playerIds, playerNames)
     setSaving(false)
+    setShowPlayerSelect(false)
+    setShowFreePlayerEdit(false)
+  }
+
+  const openPlayerSelectModal = () => {
+    if (!session) return
+    // 前回の半荘のプレイヤーをデフォルトで選択
+    const lastGame = session.games[session.games.length - 1]
+    if (lastGame) {
+      setTempSelectedPlayers(lastGame.results.map(r => r.playerId))
+    } else {
+      setTempSelectedPlayers(session.players.slice(0, 4).map(p => p.id))
+    }
+    setShowPlayerSelect(true)
   }
 
   const handleDeleteGame = async (gameId: string) => {
@@ -210,8 +228,10 @@ export function SessionDetailPage() {
             </div>
 
             <div className="space-y-2 mb-4">
-              {session.players.map((player) => {
-                const result = game.results.find(r => r.playerId === player.id)
+              {/* この半荘に参加したプレイヤーのみ表示 */}
+              {game.results.map((result) => {
+                const player = session.players.find(p => p.id === result.playerId)
+                if (!player) return null
                 return (
                   <div key={player.id} className="flex items-center gap-2">
                     <span className="w-20 text-sm font-medium text-gray-700 truncate">
@@ -269,9 +289,13 @@ export function SessionDetailPage() {
                   className="flex-1 px-3 py-2 rounded-xl bg-cream-dark text-sm font-medium"
                   id={`yakuman-player-${game.id}`}
                 >
-                  {session.players.map(p => (
-                    <option key={p.id} value={p.id}>{p.displayName}</option>
-                  ))}
+                  {/* この半荘の参加者のみ表示 */}
+                  {game.results.map(r => {
+                    const player = session.players.find(p => p.id === r.playerId)
+                    return player ? (
+                      <option key={player.id} value={player.id}>{player.displayName}</option>
+                    ) : null
+                  })}
                 </select>
                 <select
                   className="flex-1 px-3 py-2 rounded-xl bg-cream-dark text-sm font-medium"
@@ -294,7 +318,29 @@ export function SessionDetailPage() {
         ))}
 
         <button
-          onClick={handleAddGame}
+          onClick={() => {
+            if (session.groupId) {
+              // グループ対局: 5人以上いる場合はプレイヤー選択モーダル
+              if (session.players.length > 4) {
+                openPlayerSelectModal()
+              } else {
+                handleAddGame()
+              }
+            } else {
+              // 単発対局: 名前入力モーダルを表示
+              const lastGame = session.games[session.games.length - 1]
+              if (lastGame) {
+                const names = lastGame.results.map(r => {
+                  const player = session.players.find(p => p.id === r.playerId)
+                  return player?.displayName || ''
+                })
+                setTempFreePlayerNames(names)
+              } else {
+                setTempFreePlayerNames(session.players.slice(0, 4).map(p => p.displayName))
+              }
+              setShowFreePlayerEdit(true)
+            }
+          }}
           disabled={saving}
           className="w-full border-2 border-dashed border-mahjong-table/30 text-mahjong-table py-4 rounded-2xl font-bold hover:border-mahjong-table hover:bg-mahjong-table/5 transition-all flex items-center justify-center gap-2 mb-4 disabled:opacity-50"
         >
@@ -364,6 +410,129 @@ export function SessionDetailPage() {
 
       {/* ボトムナビ */}
       <BottomNav />
+
+      {/* プレイヤー選択モーダル（5人以上の場合） */}
+      {showPlayerSelect && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
+              <h2 className="text-lg font-bold text-text-primary">この半荘のプレイヤー</h2>
+              <button
+                onClick={() => setShowPlayerSelect(false)}
+                className="p-2 text-text-secondary/70 hover:text-text-secondary rounded-lg hover:bg-cream-dark transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4">
+              <p className="text-sm text-text-secondary mb-3">4人を選択してください</p>
+              <div className="space-y-2">
+                {session.players.map(player => {
+                  const isSelected = tempSelectedPlayers.includes(player.id)
+                  return (
+                    <button
+                      key={player.id}
+                      onClick={() => {
+                        if (isSelected) {
+                          setTempSelectedPlayers(prev => prev.filter(id => id !== player.id))
+                        } else if (tempSelectedPlayers.length < 4) {
+                          setTempSelectedPlayers(prev => [...prev, player.id])
+                        }
+                      }}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                        isSelected
+                          ? 'bg-primary/20 border-2 border-primary'
+                          : 'bg-cream-dark border-2 border-transparent hover:border-primary/30'
+                      } ${tempSelectedPlayers.length >= 4 && !isSelected ? 'opacity-50' : ''}`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                        isSelected ? 'bg-primary text-white' : 'bg-gray-300 text-text-secondary'
+                      }`}>
+                        {player.displayName.charAt(0)}
+                      </div>
+                      <span className="font-medium text-text-primary">{player.displayName}</span>
+                      {isSelected && (
+                        <span className="ml-auto text-primary font-bold">✓</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="p-4 border-t sticky bottom-0 bg-white">
+              <button
+                onClick={() => {
+                  if (tempSelectedPlayers.length !== 4) {
+                    alert('4人を選択してください')
+                    return
+                  }
+                  handleAddGame(tempSelectedPlayers)
+                }}
+                disabled={tempSelectedPlayers.length !== 4 || saving}
+                className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {saving ? '追加中...' : `半荘を追加（${tempSelectedPlayers.length}/4人選択中）`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 単発対局用プレイヤー名編集モーダル */}
+      {showFreePlayerEdit && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-bold text-text-primary">この半荘のプレイヤー</h2>
+              <button
+                onClick={() => setShowFreePlayerEdit(false)}
+                className="p-2 text-text-secondary/70 hover:text-text-secondary rounded-lg hover:bg-cream-dark transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {tempFreePlayerNames.map((name, index) => (
+                <div key={index} className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary-dark font-bold">
+                    {index + 1}
+                  </span>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      const newNames = [...tempFreePlayerNames]
+                      newNames[index] = e.target.value
+                      setTempFreePlayerNames(newNames)
+                    }}
+                    placeholder={`プレイヤー${index + 1}`}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-cream-dark border-2 border-transparent focus:border-primary focus:bg-white transition-colors"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 border-t">
+              <button
+                onClick={() => {
+                  if (tempFreePlayerNames.some(n => !n.trim())) {
+                    alert('全員の名前を入力してください')
+                    return
+                  }
+                  handleAddGame(undefined, tempFreePlayerNames.map(n => n.trim()))
+                }}
+                disabled={saving}
+                className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {saving ? '追加中...' : '半荘を追加'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

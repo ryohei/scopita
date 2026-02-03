@@ -445,6 +445,18 @@ export function useGroupDetail(groupId: string) {
     return { error }
   }
 
+  // グループを削除
+  const deleteGroup = async () => {
+    if (!groupId) return { error: new Error('No group ID') }
+
+    const { error } = await supabase
+      .from('groups')
+      .delete()
+      .eq('id', groupId)
+
+    return { error }
+  }
+
   // 自分が管理者かどうか
   const isAdmin = members.some(m => m.user_id === user?.id && m.role === 'admin')
 
@@ -458,6 +470,7 @@ export function useGroupDetail(groupId: string) {
     updateRules,
     addGuestMember,
     removeMember,
+    deleteGroup,
     isAdmin,
     refetch: fetchGroupDetail,
   }
